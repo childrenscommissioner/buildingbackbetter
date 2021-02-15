@@ -1,0 +1,2557 @@
+---
+title: "Technical report: Key Stage 4 Outcomes for different groupings of disadvantaged and vulnerable children"
+author: "Tom Clarke, Head of Data Science"
+date: "13/01/2021"
+output:
+  html_document: 
+    template: "W:\\CCO-WORKING-FS\\Projects\\Annes final speech segmentation\\CCO_template_html.html"
+    fig_height: 6
+    fig_width: 8
+    toc: yes
+    toc_depth: 2
+    mathjax: null
+    highlight: null
+    theme: null
+    self_contained: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning=F,message=F)
+
+require(captioner)
+
+tbCap<-captioner(prefix="Table")
+figCap<-captioner(prefix="Figure")
+
+tbF<-function(df, merge=T){
+  
+  df<-lapply(df,function(x){
+      if(is.character(x)){
+        
+        gsub("[(] {1,}","(",x)
+      }else{
+        x
+      }
+    })
+  
+  df<-dplyr::as_tibble(df)
+  
+  if(doc=="docx"){
+  
+  require(flextable)
+  require(officer)
+  
+    tb<-df
+    
+    
+    
+    tb<-regulartable(tb)
+  tb<-border_remove(tb)
+
+
+bd<-fp_border()
+
+bd_inner<-fp_border(width=0.7)
+
+if(merge){
+   g_col<-names(df)[1]
+    
+    rw_max<-unique(as.data.table(df)[,tot_rw:=seq_len(.N)][,`:=`(rw_max=seq_len(.N),max_rw=.N),by=.(get(g_col))
+                              ][rw_max==max_rw][,tot_rw])
+    
+    tb<-hline(tb,i=rw_max,part="body",border=bd_inner)
+    
+ tb<-merge_v(tb,1)}
+   
+  
+
+tb<-hline_top(tb,part="body",border=bd)
+tb<-hline_bottom(tb,part="body",border=bd)
+
+tb<-hline_top(tb,part="header",border=bd)
+
+tb<-hline(tb,i=1,part="header",border=bd)
+
+
+
+tb<-bold(tb,j=1)
+tb<-bold(tb,part="header")
+tb<-fontsize(tb,size=12,part="all")
+tb<-set_table_properties(tb,layout="autofit")
+
+tb<-fix_border_issues(tb)
+
+num_cols<-names(df)[sapply(df,function(x) is.numeric(x))]
+
+int_cols<-names(df)[sapply(df,function(x) is.integer(x))]
+
+tb<-colformat_int(tb,int_cols)
+
+tb<-colformat_num(tb,setdiff(num_cols,int_cols))
+
+tb
+  }else{
+    require(dplyr)
+    
+    out<-kable(df,"html") %>%
+      kable_styling() 
+    
+    if(names(df)[1]=="Disadvantage type"){
+      
+      out<-out %>%
+        collapse_rows(columns=1)
+      
+    }
+    out
+  }
+}
+
+doc<-knitr::opts_knit$get('rmarkdown.pandoc.to')
+
+```
+
+```{r data, include=FALSE}
+require(DBI)
+require(odbc)
+require(data.table)
+require(ggplot2)
+require(knitr)
+require(kableExtra)
+
+
+con<- dbConnect(odbc(), 
+                   .connection_string = "driver={SQL Server Native Client 11.0};
+                   Server=VMT1PR-DHSQL02;Database=CCO-PRIMARY-DB;
+                   Trusted_Connection=yes;") ## Connection string is long but suggest copy and paste
+
+
+tb<-as.data.table(dbGetQuery(con,"SELECT a.*, b.lsoa_home lsoa_home FROM anne_speech_base a
+                             LEFT JOIN 
+                             (SELECT DISTINCT PupilMatchingRefAnonymous_SUM19, LSOA11_SUM19 lsoa_home FROM Summer_Census_2019
+                             WHERE RecordStatus_SUM19 = '' OR RecordStatus_SUM19 IS NULL
+                             OR CAST(RecordStatus_SUM19 as integer)< 10) b
+                             ON a.pmr = b.PupilMatchingRefAnonymous_SUM19"))
+
+seg_cols<-c("cin6","fsm6","sen6")
+
+tb<-tb[,tot3:=rowSums(.SD),.SDcols=seg_cols
+   ][,tot3_sns:=rowSums(.SD),.SDcols=c("cin6","fsm6","sns6")][,`:=`(any3=ifelse(tot3>0,1,0),all3=ifelse(tot3==3,1,0),any3_sns=ifelse(tot3_sns>0,1,0),all3_sns=ifelse(tot3_sns==3,1,0))]
+
+lac<-dbGetQuery(con,"SELECT DISTINCT UPN FROM 
+                CLA_Episodes_2019
+                WHERE LEGAL_STATUS NOT IN ('V3','V4')
+                AND UPN NOT LIKE 'UN%'
+                AND CAST(DateEpisodeStarted1 as date) <= '2019-03-31' 
+                AND CAST(DateEpisodeCeased1 as date) >= '2013-04-01'")
+
+lac_yr<-as.data.table(dbGetQuery(con,"SELECT DISTINCT UPN, CAST(DateEpisodeStarted1 as date) strtdate,
+CAST(DateEpisodeCeased1 as date) enddate
+FROM 
+                CLA_Episodes_2019
+                WHERE LEGAL_STATUS NOT IN ('V3','V4')
+                AND UPN NOT LIKE 'UN%'
+                AND CAST(DateEpisodeStarted1 as date) <= '2019-03-31' 
+                AND CAST(DateEpisodeCeased1 as date) >= '2013-04-01'")
+)
+
+fYrs<-data.table(strt=paste0("01/04/20",13:18),
+                 end=paste0("01/04/20",14:19),
+                 yr=c(2014:2019),stringsAsFactors = F)
+
+for(i in seq_len(nrow(fYrs))){
+   
+   strt<-lubridate::dmy(fYrs$strt[i])
+   end<-lubridate::dmy(fYrs$end[i])
+   var<-paste0("care",fYrs$yr[i])
+   
+   lac_yr<-lac_yr[,(var):=ifelse(
+      lubridate::int_overlaps(
+         lubridate::interval(strtdate,enddate),lubridate::interval(strt,end)
+      ),1,0)]
+   
+   
+}
+
+lac_yr<-lac_yr[,lapply(.SD,function(x) ifelse(sum(x,na.rm=T)>0,1,0)),by=.(UPN),.SDcols=paste0("care",2014:2019)]
+
+lac_yr_tot<-lac_yr[,.(tot_lac=rowSums(.SD)),by=UPN,.SDcols=paste0("care",2014:2019)]
+tb<-tb[,lac6:=ifelse(upn %in% lac$UPN,1,0)
+       ][,rm:=ifelse(lac6==1 & cin6==0,1,0)
+         ][rm==0][,rm:=NULL]
+
+tb<-merge(tb,lac_yr_tot,by.y="UPN",by.x="upn",all.x=T)
+
+tb<-tb[,tot_lac:=ifelse(is.na(tot_lac),0,tot_lac)]
+
+tb<-merge(tb,lac_yr[,.(upn=UPN,lac19=care2019)],by="upn",all.x=T)[,lac19:=ifelse(is.na(lac19),0,lac19)]
+
+tb<-tb[,prop_fsm:=tot_fsm/tot_term*100
+     ][,perFsm6:=ifelse(prop_fsm==100,1,0)]
+
+cin19<-dbGetQuery(con,"SELECT a.pmr pmr, CASE WHEN SUM(ANY_POINT)>0 THEN 1 ELSE 0 end cin2019
+                  FROM anne_speech_base a
+                  LEFT JOIN CIN_Population_1819 b
+                  ON a.upn = b.UPN
+                  GROUP BY a.pmr")
+
+tb<-tb[,cin19:=ifelse(pmr %in% cin19$pmr[cin19$cin2019==1],1,0)]
+
+seg_cols<-c("lac6","perFsm6","ehc6")
+
+tb<-tb[,tot3_high:=rowSums(.SD),.SDcols=seg_cols
+   ][,`:=`(any3_high=ifelse(tot3_high>0,1,0),all3_high=ifelse(tot3_high==3,1,0))]
+
+lsoa_look<-fread("lsoa_lookup_master.csv")
+
+tb<-merge(tb,unique(lsoa_look[,.(LSOA11CD,la_home_code=UTLA19CD,la_home=UTLA19NM)]),all.x=T,
+          by.x="lsoa_home",by.y="LSOA11CD")
+
+```
+
+## Introduction
+
+The Children’s Commissioner’s Office’s programme of work childhood vulnerability shows aims to shine a light on the children growing up with additional needs or issues that may need more help to succeed. These include educational disadvantage, severe poverty, special educational needs or disabilities, risks of abuse and neglect, mental health needs, youth violence and exploitation, homelessness, and other issues. Our work on this area has attempted to show many children suffer from each of these issues, and how many vulnerable children there may be in total.
+
+Many children grow up facing at least one of these issues. In fact, we have estimated that – even before the pandemic – 2.3 million children in England were growing up in a family vulnerable family with some kind of complex need^[https://www.childrenscommissioner.gov.uk/report/childhood-vulnerability-in-england-2019/].  Even more concerning are the children who face multiple overlapping vulnerabilities – risks that compound each other and collectively chip away at children’s ability to thrive. Unfortunately, it is these kinds of more severe vulnerabilities where data and insights are lacking the most. 
+
+Our work on vulnerability has made some valuable inroads, by showing the 100,000 children living in a household affected by all of the ‘toxic trio’ issues – domestic abuse, parental mental health issues and parental drug and alcohol dependency^[https://www.childrenscommissioner.gov.uk/wp-content/uploads/2018/07/Vulnerability-Technical-Report-2-Estimating-the-prevalence-of-the-toxic-trio.pdf]  – or the 140,000 teenagers with two or more high needs (including dropping out of school, special educational needs, or having a social worker)^[https://www.childrenscommissioner.gov.uk/report/teenagers-falling-through-the-gaps/].  Despite this, it is still too difficult to assess the numbers, experiences and outcomes of the children that we should be most worried – those living with multiple and persistent vulnerabilities.
+
+One area where we can make more progress is in education. It is well known that disadvantaged children tend, on average, to have lower levels of educational attainment. Children eligible for free school meals (FSM) are only around half likely as likely as the rest of the cohort to achieve a strong pass in English and Maths GCSE. Furthermore, children with identified special educational needs (SEN) are only a quarter as likely to achieve this benchmark, compared to children without SEN^[https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/863815/2019_KS4_revised_text.pdf].  And the Department for Education’s Child in Need (CIN) review^[https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/809108/CIN_review_final_analysis_publication.pdf]  indicates that children who have ever needed a social worker are around a third as likely to achieve this, compared to children who have not needed a social worker. More recent evidence from the University of Bristol shows that within the group of children too often we consider one vulnerability at a particular point in time. These separate pieces of evidence are powerful and important on their own, but what has too often been missed is that in many cases they could be examining the same child from three different lenses. In other words, these groups often overlap – and most vulnerable children will belong to more than one group.
+
+Data analysed for this report, focusing on the cohort of children taking GCSE exams in 2019, shows the degree of overlap. Of the children who have needed a social worker in the past six years, 4 in 5 also had another disadvantage (FSM or SEN) in the past six years. Of the children who had been FSM in the past six years, more than half also been CIN or had SEN over that period as well. And nearly half of the children who had had SEN over the past six years and had also been CIN or FSM over that period. As these disadvantages compound, so too does the additional support that may needed. Some children – around 1 in 25 of the Year 11 cohort – had all three of these characteristics.
+
+This report also shows the extent to which these issues persist over time. It finds that less than half (44%) of the pupils who have had a social worker have only done so for one year; the rest have had a social worker for multiple years. Among those who have had SEN, only around three quarters have done so for more than a year, and among those who have had FSM this is more than four-fifths. 
+
+As well as looking at the intersections of these different groups, this analysis also looks within these groups to see how education outcomes vary amongst children with needs identified at different thresholds – for example, children in care or children with an Education, Care and Health Plan (EHCP).
+
+This report finds only around 2 in 5 of the broader group of children – those who have been CIN or FSM or SEN  – achieved a pass in GCSE English and Maths in 2019. But children who only have one vulnerability will still do well on average. For example, nearly two thirds of children who only had a social worker – and not FSM or SEN – achieved these passes. The same is true of children who only had FSM. These rates are actually in line with the average pass rate across all pupils.
+
+But as vulnerabilities coincide and become more severe or persistent, outcomes can rapidly deteriorate. Of the children who have had a social worker and been on FSM and had SEN, only 13% passed GCSE English and Maths. The rate falls to as low as 4% if the child was continually on FSM throughout school and also had an EHCP. 
+
+The proportions of children who have these various types and levels of need is therefore a crucial way of understanding the overall level and severity of need among children. We should that these proportions can vary considerably across the country: in some local areas, nearly 3 in 4 pupils have had CIN or FSM or SEN in the past six years. But there is also wide variation in the outcomes that these children achieve: in some areas more half of these pupils managed to pass English and Maths GCSE, whereas in other areas less than a third of this group managed to do so.
+
+With the data available, it is difficult to explain what is driving this local variation, even after taking into account other local factors including deprivation and rates of access for SEN and CIN support. We still need to know more about what it is that enables some of these highly vulnerable children to succeed – either because of the area they live in, or because of personal or family factors that enable them to thrive regardless. What is clear, however, is that re-examining the data on disadvantaged children in this way helps us to see which groups – on average – are the most left-behind and need the most help.
+
+
+## Executive summary
+
+This analysis examines the Key Stage 4 (KS4) results for the following groupings of disadvantaged and vulnerable children:
+
+* Those who have had an open episode with children’s services in the last 6 years (CIN 6)
+* Those who have been eligible for free school meals in the last 6 years (FSM 6)
+* Those who have had any identified special educational need in the previous 6 years (SEN 6).
+
+We examine Key Stage 4 results for children at the intersections of these groups to examine what (if any) additional disadvantage children face when they have multiple identified vulnerabilities.  We also look within these groups and examine how KS4 results vary amongst children with needs identified at higher thresholds. We investigate this amongst the most recent cohort of children to take GCSEs that were not affected by the COVID-19 pandemic - those who sat their GCSEs in summer 2019. The main outcome measure in this analysis is whether these children achieved Levels 9-4 in English and Maths GCSE.
+
+Our key questions to answer are:
+
+* What are the Key Stage 4 results for children with varying combinations of these CIN 6, FMS 6 and SEN 6 characteristics?
+
+* How do results vary in relation to the length of time that they have been CIN/FSM eligible/identified SEN over the past 6 years?
+
+* How do these results vary by local authority for children with combinations of these characteristics?
+
+Overall this analysis echos previous work suggesting that large numbers of children have these identified vulnerabilities and that (on average) they have notably worse outcomes at Key Stage 4. However, the key addition is that it also demonstrates there is considerable variation within these groups in children's Key Stage 4 results based on their combinations of these vulnerabilities.
+
+* Children with any of these CIN/FSM/SEN 6 – that is, CIN 6 or FSM 6 or SEN 6 – characteristics represent a substantial proportion of this cohort, accounting for just under 1 in 2 children sitting GCSE exams in 2019.
+
+* They have notably lower rates of achieving levels 9-4 in KS4 English and Maths. Around 4 in 10 of this group achieve at least a level 4 in these subjects compared to a cohort average of just over 6 in 10. Around 1 in 4 achieve at least a level 5, compared to 4 in 10 in the cohort overall.
+
+* Children with any of these CIN/FSM/SEN 6 characteristics account for 72% of the children in this cohort not achieving levels 9-4 in KS4 English and maths and 61% of those not achieving levels 9-5. 
+
+* Rates of achieving at least level 4 in these subjects are lowest among those that have had an EHC plan in the last 6 years (12%), and among those that have been looked after at some point in the last 6 years (23%).
+
+* The specific combination of children’s CIN/FSM/SEN 6 status makes substantial differences to their performance at KS4: Nearly two thirds of children that are CIN 6 only – i.e. CIN 6 but not FSM 6 and not SEN 6 – achieve at least a level 4 in English and Maths.  This is similar to the average rate for the cohort as a whole (64%). The lowest rates are amongst children with an EHC plan in the last 6 years in combination with an open CIN episode and being FSM eligible throughout the 6 years achieving at least a level 4 in English and Maths (4%).
+
+* Children with an EHC plan in the last 6 years combination with other CIN/SEN/FSM 6 characteristics have the lowest rates of achieving at least a level 4 in English and Maths.
+
+* There is substantial variation by local authority in rates of these children achieving at least a level 4 in English and Maths.
+–	Rates of FSM 6 children achieving this range from 28% to 68% across local authorities.
+–	Rates of CIN 6 children achieving this range from 20% to 54%.
+–	Rates for children with SEN support but no EHC plan in the last 6 years range from 17% to 56%. 
+
+
+## Definition of cohort
+
+We base our analysis on the cohort of children who took Key Stage 4 (KS4) exams in 2019 and can be matched in the Summer term school census 2019 (n = 548,610). Note that since the School Census primarily covers state-funded schools only, the resulting matched cohort largely excludes who were not enrolled in a state school^[We also exclude from the sample any children in the Key Stage 4 file not included in national KS4 statistics for 2019. This is to better align with published national statistics though this may exclude some particularly vulnerable children from our results. We also exclude those where their UPNs are associated with more than one pupil matching reference and a very small number that cannot be matched between the looked after children and CIN censuses.].
+
+We then link this base cohort to every termly pupil level school census over the six year period from 2013/14 to 2018/19 (via the anonymised pupil matching reference) in order to add information on each pupil’s SEN and FSM status in each term during this period. We also link in the children in need (CIN) census datasets over the same time period to add information on whether each pupil had an open CIN episode with children’s social care.
+ 
+
+We then link this base cohort to the termly pupil level school census (hereafter the NPD) and annual children in need census datasets from 2014-2019 (inclusive) via their anonymised pupil matching reference and UPN respectively. This creates a longitudinal record of this cohort's number of terms with identified SEN and FSM eligibility as well as years when they have an open CIN episode  with children's services. 
+
+## Rates of disadvantage
+
+The main disadvantage indicators in this analysis are:
+
+* Whether a pupil had an open episode with children’s services in the last 6 years (CIN 6)
+* Whether a pupil had been eligible for free school meals in the last 6 years (FSM 6)
+* Whether a pupil had any identified special educational need in the previous 6 years (SEN 6).
+
+`r tbCap("tb_prop","Proportions of cohort that are CIN 6/SEN 6 or FSM 6","cite")` and `r figCap("fig_venn1","Venn diagram of intersections between CIN 6, SEN 6 and FSM 6 groups","cite")` below show the proportions of the cohort that were CIN/SEN/FSM in the last 6 years. Just under 1 in 2 children in this cohort had any of these characteristics in the last 6 years and around 1 in 20 had all 3 at some point.
+
+**`r tbCap("tb_prop","Proportions of cohort that are CIN 6/SEN 6 or FSM 6")`**
+
+```{r}
+
+tb_out<-melt(tb[,.(pmr,sen6,fsm6,cin6,sns6,ehc6,any3,all3,any3_sns,all3_sns)],id.vars = c("pmr")
+     )[,.(c=.N),by=.(variable,value)
+       ][,perc:=round(c/sum(c),2)*100,by=.(variable)
+         ][value==1
+           ][,value:=NULL
+                     ][,group:=ifelse(variable %in% c("cin6","lac6","cpp6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6"),"SEN","Summary")))
+                       ][,.(group,variable,c,perc)
+                         ][order(group)]
+
+
+
+tb_out$variable<-plyr::mapvalues(tb_out$variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in last 6 years","Any SEN without a statement/EHC plan in the last 6 years","Any statement/EHC plan in the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+
+names(tb_out)<-c("Disadvantage type","Disadvantage indicator","Number of pupils","% of cohort")
+
+tbF(tb_out)
+
+```
+
+**`r figCap("fig_venn1")`**
+
+```{r}
+ven_tc<-function (disjoint.combinations = NULL, vars = NULL, Delta = 0.1, 
+          ThreeD = FALSE, lambda = NULL, stressWay = c("sum", 
+                                                       "combine"), delta = 0.01, weight = NULL, expand = NULL, 
+          twoWayGenerate = FALSE, scaleSearch = c("NelderMead", 
+                                                  "lineSearch", "goldenSectionSearch", "BFGS", 
+                                                  "CG", "L-BFGS-B", "SANN", "Brent"), 
+          twoWaySearch = c("lineSearch", "NelderMead", 
+                           "goldenSectionSearch", "BFGS", "CG", 
+                           "L-BFGS-B", "SANN", "Brent"), scaleSeachTolerance = list(value = 1e-05, 
+                                                                                    proportional = FALSE), distanceTolerance = list(value = 1e-05, 
+                                                                                                                                    proportional = FALSE), lossTolerance = list(ToleranceofLoss = 1e-10, 
+                                                                                                                                                                                maximumStep = 10, ALPHA = 0.01, ToleranceofStepsize = 1e-05, 
+                                                                                                                                                                                proportional = FALSE), stressBound = 0.001, maximumStep = 50, 
+          planeSize = 50, lower = -Inf, upper = Inf, control = list(), 
+          hessian = FALSE, mar = rep(1, 4), cols = NULL, alpha = 0.3, 
+          smooth = FALSE, ...) 
+{
+  require(stringr)
+  if (is.null(disjoint.combinations)) 
+    stop("combinations should not be empty")
+  if (is.data.frame(disjoint.combinations)) {
+    disjoint.combinations <- extractCombinations(disjoint.combinations, 
+                                                 vars = vars)
+  }
+  combinations <- vennplot:::disjoint2combinations(disjoint.combinations)
+  reOrder <- vennplot:::reorderDisjointCombinations(combinations, disjoint.combinations)
+  disjoint.combinations <- reOrder$newDisjointCombinations
+  combProp <- combinations/sum(disjoint.combinations)
+  disProp <- disjoint.combinations/sum(disjoint.combinations)
+  if (is.null(weight)) {
+    weight <- rep(1, length(disjoint.combinations))
+  }
+  else {
+    if (length(weight) != length(disjoint.combinations)) {
+      stop("weight must be NULL or the same length as the number of disjoint combinations")
+    }
+  }
+  
+  weight <- weight[reOrder$newOrder]
+  disjointSetNames <- names(disProp)
+  names(weight) <- disjointSetNames
+  numWays <- stringr::str_count(disjointSetNames, pattern = "&") + 
+    1
+  if (max(numWays) == 2) {
+    nonEmptyTwoWays <- which(combProp != 0)
+    weight <- weight[nonEmptyTwoWays]
+    disjointSetNames <- disjointSetNames[nonEmptyTwoWays]
+    numWays <- numWays[nonEmptyTwoWays]
+    combProp <- combProp[nonEmptyTwoWays]
+    disProp <- disProp[nonEmptyTwoWays]
+  }
+  oneWays <- which(numWays == 1)
+  if (is.null(cols)) {
+    cols <- rainbow(length(oneWays), alpha = alpha)
+  }
+  oneWaySetName <- disjointSetNames[oneWays]
+  oneWaySet <- combProp[oneWays]
+  m <- length(oneWays)
+  if (length(disjointSetNames) == length(oneWays)) {
+    largerThanOneWaySetName <- NULL
+  }
+  else {
+    largerThanOneWaySetName <- disjointSetNames[-oneWays]
+    if (!all(unique(unlist(str_split(largerThanOneWaySetName, 
+                                     "&"))) %in% oneWaySetName)) {
+      stop("Some intersection sets contain sets which do not appear individually.")
+    }
+  }
+  groups <- vennplot:::groupDetection(largerThanOneWaySetName = largerThanOneWaySetName, 
+                           oneWaySetName = oneWaySetName)
+  groupOrder <- order(sapply(groups, length), decreasing = T)
+  groups <- groups[groupOrder]
+  ngroups <- length(groups)
+  combPropGroup <- list()
+  disPropGroup <- list()
+  for (i in 1:ngroups) {
+    groupMember <- groups[[i]]
+    groupWay <- oneWaySetName[groupMember]
+    for (j in 1:length(disjointSetNames)) {
+      if (any(groupWay %in% str_split(disjointSetNames[j], 
+                                      "&")[[1]])) {
+        groupWay <- c(groupWay, disjointSetNames[j])
+      }
+    }
+    groupWay <- unique(groupWay)
+    combPropGroup[[i]] <- combProp[which(disjointSetNames %in% 
+                                           groupWay)]
+    disPropGroup[[i]] <- disProp[which(disjointSetNames %in% 
+                                         groupWay)]
+  }
+  radius <- if (ThreeD) {
+    (3 * oneWaySet/(4 * pi))^(1/3)
+  }
+  else {
+    sqrt(oneWaySet/pi)
+  }
+  radiusGroup <- lapply(groups, function(grp) {
+    radius[grp]
+  })
+  weightGroup <- lapply(disPropGroup, function(prop) {
+    weight[which(names(weight) %in% names(prop) == TRUE)]
+  })
+  groupCentre <- list()
+  if (length(lower) != length(upper)) {
+    stop("the length of lower vector must be equal to the length of upper vector")
+  }
+  if (length(lower) == 1 && length(upper) == 1) {
+    lower = rep(lower, 2)
+    upper = rep(upper, 2)
+  }
+  if (length(hessian) == 1) {
+    hessian = rep(hessian, 2)
+  }
+  scaleSearch <- match.arg(scaleSearch)
+  twoWaySearch <- match.arg(twoWaySearch)
+  stressWay <- match.arg(stressWay)
+  stressGroup <- rep(0, ngroups)
+  RSSGroup <- rep(0, ngroups)
+  TSSGroup <- rep(0, ngroups)
+  loss <- 0
+  for (gn in 1:ngroups) {
+    lossFunctionOutput <- vennplot:::lossFunction(gn = gn, combProp = combPropGroup[[gn]], 
+                                       Delta = Delta, radius = radiusGroup[[gn]], disProp = disPropGroup[[gn]], 
+                                       lambda = lambda, weight = weightGroup[[gn]], ThreeD = ThreeD, 
+                                       method = c(scaleSearch, twoWaySearch), twoWayGenerate = twoWayGenerate, 
+                                       lower = lower, upper = upper, control = control, 
+                                       hessian = hessian, expand = expand, scaleSeachTolerance = scaleSeachTolerance, 
+                                       distanceTolerance = distanceTolerance, lossTolerance = lossTolerance, 
+                                       stressBound = stressBound, maximumStep = maximumStep, 
+                                       planeSize = planeSize)
+    groupCentre[[gn]] <- lossFunctionOutput$centre
+    stressGroup[gn] <- lossFunctionOutput$stress
+    RSSGroup[gn] <- lossFunctionOutput$RSS
+    TSSGroup[gn] <- lossFunctionOutput$TSS
+    loss <- loss + lossFunctionOutput$loss
+  }
+  if (stressWay == "sum") {
+    stress <- sum(stressGroup)
+  }
+  else {
+    stress <- sum(RSSGroup)/sum(TSSGroup)
+  }
+  if (ngroups > 1) {
+    combinedGroups <- combineGroups(groupCentre = groupCentre, 
+                                    radiusGroup = radiusGroup, delta = delta)
+    xy <- combinedGroups$xy
+    radius <- combinedGroups$radius
+    oneWaySetName <- combinedGroups$namexy
+  }
+  else {
+    xy <- groupCentre[[1]]
+    radius <- radiusGroup[[1]]
+    oneWaySetName <- names(radius)
+  }
+  list(xy = xy, radius = radius, loss = loss, stress = stress)
+}
+
+v<-copy(tb)[,.(cin6,fsm6,sen6)]
+
+v$totChange<-rowSums(v)
+
+require(dplyr)
+
+  overlaps<- v %>% mutate_at(.vars=c("cin6","fsm6","sen6"),.f=~ifelse(.x>0,1,0)) %>%
+    group_by(cin6,fsm6,sen6) %>% tally()
+  
+  size<-c(
+    "CIN 6" = sum(overlaps$n[overlaps$cin6==1 & overlaps$fsm6==0 & overlaps$sen6==0])/sum(overlaps$n),
+    "FSM 6"=sum(overlaps$n[overlaps$cin6==0 & overlaps$fsm6==1 & overlaps$sen6==0])/sum(overlaps$n),
+    "SEN 6" = sum(overlaps$n[overlaps$cin6==0 & overlaps$fsm6==0 & overlaps$sen6==1])/sum(overlaps$n),
+    "CIN 6&FSM 6" =sum(overlaps$n[overlaps$cin6==1 & overlaps$fsm6==1 & overlaps$sen6==0])/sum(overlaps$n),
+    "CIN 6&SEN 6" = sum(overlaps$n[overlaps$cin6==1  & overlaps$sen6==1 & overlaps$fsm6==0])/sum(overlaps$n),
+    "CIN 6&FSM 6&SEN 6"= sum(overlaps$n[overlaps$cin6==1 & overlaps$fsm6==1 & overlaps$sen6==1])/sum(overlaps$n),
+    "FSM 6&SEN 6" = sum(overlaps$n[overlaps$fsm6==1 & overlaps$sen6==1 & overlaps$cin6==0])/sum(overlaps$n)
+  )
+  
+
+
+require(vennplot)
+
+
+vPlot<-ven_tc(size,Delta=0.01)
+
+
+require(ggforce)
+vP<-data.frame(g=as.character(row.names(vPlot$xy)),x=vPlot$xy[,1],y=vPlot$xy[,2],r=vPlot$radius)
+
+sizeDf<-data.frame(d=names(size),perc=size,stringsAsFactors = F)
+
+
+
+vD<-as.data.frame(ggplot_build(
+  ggplot()+geom_circle(data=vP,aes(x0=x,y0=y,r=r,fill=g,group=g),alpha=0.3)+scale_fill_brewer(type="qual",palette=2,name="")+xlab("")+
+    ylab("")+coord_fixed()+
+    theme_minimal()+theme(axis.text=element_blank(),
+                          axis.ticks=element_blank(),panel.grid = element_blank()))$data)
+
+#### work out centroids - this took fucking ages
+vD2<-vD %>% left_join(data.frame(g=as.character(c(1:3)),lb=vP$g),by=c("group"="g")) %>%
+  split(.$lb)
+
+require(sp)
+
+vD2<-purrr::imap(vD2,function(x,y){
+  
+  p<-list(Polygon(coords=x[,c("x","y")]))
+  
+  
+  
+  
+})
+
+vD2<-purrr::imap(vD2,function(x,y){
+  
+  vD<-Polygons(x,ID=y)
+  
+  SpatialPolygons(list(vD))
+  
+  
+})
+
+
+vD2<-purrr::imap(vD2,function(x,y){
+  
+  SpatialPolygonsDataFrame(x,data=data.frame(id = y, 
+                                             row.names = y))
+  
+  
+})
+cm<-t(combn(1:3,2))
+
+rList<-list()
+for(i in 1:3){
+  
+  g<-cm[i,1]
+  g2<-cm[i,2]
+  rList[[i]]<-raster::intersect(vD2[[g]],vD2[[g2]])
+  
+}
+
+tList<-list()
+
+for(i in 1:3){
+  
+  g<-cm[i,1]
+  g2<-cm[i,2]
+  tList[[i]]<-tryCatch({raster::intersect(rList[[g]],rList[[g2]])},error = function(e) e)
+  
+}
+
+rList2<-lapply(rList,function(x){
+  
+  
+  
+  require(raster)
+  
+  ob<-tryCatch({x - tList[[1]]},error= function(e) e)
+  
+  if(inherits(ob,"error")){
+    
+    ob<-x
+    
+  }
+  
+  if(!is.null(ob)){ 
+    if(!nrow(ob@data)==0){
+      
+      v<-paste(ob@data$id.1,ob@data$id.2,sep="&")
+      
+      coord<-as.data.frame(rgeos::gCentroid(ob))
+      
+      coord$v<-v
+      
+      coord
+    } else{
+      
+      data.frame(x=NA,y=NA,v=NA)
+      
+    }
+  } else{
+    
+    data.frame(x=NA,y=NA,v=NA)
+    
+  }}  
+)
+
+n<-c(1:3)
+
+rList3<-lapply(n,function(x){
+  require(raster)
+  
+  n1<-n[!n==x]
+  
+  n2<-n1[1]
+  
+  n3<-n1[2]
+  
+  ob<-tryCatch({vD2[[x]] - vD2[[n2]] - vD2[[n3]]},error=function(e) e)
+  
+  if(!inherits(ob,"error")){
+    if(nrow(ob@data)>0){ 
+      v<-ob@data$id
+      
+      coord<-as.data.frame(rgeos::gCentroid(ob))
+    } else{
+      
+      v<-levels(ob@data$id)
+      
+      coord<-as.data.frame(rgeos::gCentroid(vD2[[x]]))
+    }
+    coord$v<-v
+    
+    coord} else{
+      
+      v<-vD2[[x]]@data$id
+      
+      coord<-as.data.frame(rgeos::gCentroid(vD2[[x]]))
+      coord$v<-v
+      coord
+    }
+  
+})
+
+if(!inherits(tList[[1]],"error") && !is.null(tList[[1]])){
+  all<-as.data.frame(rgeos::gCentroid(tList[[1]]))
+  
+  
+    all$v<-"CIN 6&FSM 6&SEN 6"
+  
+  
+  
+  centDf<-rbind(do.call("rbind",rList2),all,
+                do.call("rbind",rList3))} else{
+                  
+                  centDf<-rbind(do.call("rbind",rList2),
+                                do.call("rbind",rList3))
+                  
+                }
+
+
+    centDf<- centDf %>% left_join(sizeDf %>% mutate(perc=paste0(round(perc,2)*100,"%\n(",format(perc*nrow(tb),big.mark=","),")")),by=c("v"="d")) %>%
+      mutate_at(.vars=c("x","y"),.f=~round(.x,3)) %>% distinct(x,y,.keep_all = T)
+    
+detach("package:raster", unload=TRUE)
+
+
+ggplot()+geom_circle(data=vP,aes(x0=x,y0=y,r=r,fill=g),alpha=0.3)+ geom_text(data = centDf,aes(x=x,y=y,label=perc))+
+  scale_fill_brewer(type="qual",palette=2,name="")+xlab(NULL)+
+  ylab(NULL)+coord_fixed()+
+  theme_minimal()+theme(axis.text=element_blank(),
+                        axis.ticks=element_blank(),panel.grid = element_blank(),plot.margin=unit(c(0,0,0,0),"mm")) + guides(fill=guide_legend(
+                          keywidth=0.2,
+                          keyheight=0.45,
+                          default.unit="inch")
+                        )
+
+
+
+```
+
+`r figCap("fig_venn1",display="cite")` also shows a notable degree of overlap between children in these groups. For example, 79% of the pupils in the CIN 6 group are also a member of the SEN 6 or FSM 6 groups. More than half – 57% – of the pupils in the FSM 6 group are also in the SEN 6 or CIN 6 groups. And nearly half of the pupils in the SEN 6 group are also in the FSM 6 or CIN 6 groups. 
+
+Tables 2, 3, 4 and demonstrates that these overlaps are larger than would be expected if the FSM 6, SEN 6 and CIN 6 were distributed randomly. `r tbCap("tb_cinSEN_cor","Proportions of CIN 6 group that are also SEN 6","cite")` demonstrates CIN 6 children are over twice as likely to have had any identified SEN in the past 6 years compared to non-CIN 6 children.
+
+**`r tbCap("tb_cinSEN_cor")`**
+
+```{r}
+
+tb_out<-dcast(tb[,.(c=.N),by=.(cin6,sen6)
+   ][,perc:=c/sum(c),by=.(cin6)
+     ][,use:=paste0(round(perc,2)*100,"% (",format(c,big.mark=","),")")
+       ][,`:=`(cin6=ifelse(cin6==1,"CIN 6","Not CIN 6"),sen6=ifelse(sen6==1,"SEN 6","Not SEN 6"))
+         ][,.(cin6,`SEN 6`=sen6,use)
+           ],`SEN 6`~cin6,value.var = "use")
+
+tbF(tb_out)
+
+```
+
+`r tbCap("tb_cinFSM_cor","Proportions of CIN 6 group that are also FSM 6","cite")` demonstrates a similar strong association between children being CIN 6 and FSM 6. CIN 6 children are nearly three times as likely to have also been eligible for free school meals in the past 6 years compared to non-CIN 6 children.
+
+**`r tbCap("tb_cinFSM_cor")`**
+
+```{r}
+
+tb_out<-dcast(tb[,.(c=.N),by=.(cin6,fsm6)
+   ][,perc:=c/sum(c),by=.(cin6)
+     ][,use:=paste0(round(perc,2)*100,"% (",format(c,big.mark=","),")")
+       ][,`:=`(cin6=ifelse(cin6==1,"CIN 6","Not CIN 6"),fsm6=ifelse(fsm6==1,"FSM 6","Not FSM 6"))
+         ][,.(cin6,`FSM 6`=fsm6,use)
+           ],`FSM 6`~cin6,value.var = "use")
+
+tbF(tb_out)
+
+```
+
+`r tbCap("tb_senFSM_cor","Proportions of SEN 6 group that are also FSM 6","cite")` demonstrates a similar strong association between children being SEN 6 and FSM 6. CIN 6 children are nearly twice as likely to have also been eligible for free school meals in the past 6 years compared to children with no identified SEN.
+
+**`r tbCap("tb_senFSM_cor")`**
+
+```{r}
+
+tb_out<-dcast(tb[,.(c=.N),by=.(sen6,fsm6)
+   ][,perc:=c/sum(c),by=.(sen6)
+     ][,use:=paste0(round(perc,2)*100,"% (",format(c,big.mark=","),")")
+       ][,`:=`(sen6=ifelse(sen6==1,"SEN 6","Not SEN 6"),fsm6=ifelse(fsm6==1,"FSM 6","Not FSM 6"))
+         ][,.(sen6,`FSM 6`=fsm6,use)
+           ],`FSM 6`~sen6,value.var = "use")
+
+tbF(tb_out)
+
+```
+
+`r tbCap("tb_high","Proportions of cohort with identified higher threshold needs in the last 6 years","cite")` and `r figCap("fig_venn2","Venn diagram of intersections between LAC 6, EHC 6 and Persistent FSM groups","cite")` demonstrates the proportions of the cohort with identified higher threshold needs. Just over 1% of the cohort have been looked after in the last 6 years (LAC 6). Around 1 in 10 children have been either looked after, had an EHC plan or been FSM eligible for all of the possible terms in the last 6 years.
+
+**`r tbCap("tb_high")`**
+
+```{r}
+tb_out<-melt(tb[,.(pmr,ehc6,lac6,perFsm6,any3_high,all3_high)],id.vars = c("pmr")
+     )[,.(c=.N),by=.(variable,value)
+       ][,perc:=round(c/sum(c),3)*100,by=.(variable)
+         ][value==1
+           ][,value:=NULL
+                     ]
+
+tb_out$variable<-plyr::mapvalues(tb_out$variable,
+                                 c("ehc6","perFsm6","lac6","any3_high","all3_high"),
+                                 c("EHC plan in last 6 years","FSM for all possible terms in last 6 years - Persistent FSM","LAC in last 6 years",
+                                   "Any EHC/LAC/Persistent FSM in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years"))
+
+names(tb_out)<-c("Characteristic","Number of pupils","% of cohort")
+
+tbF(tb_out)
+```
+
+**`r figCap("fig_venn2")`**
+
+```{r}
+v<-copy(tb)[,.(ehc6,lac6,perFsm6)]
+
+v$totChange<-rowSums(v)
+
+require(dplyr)
+
+overlaps<- v %>% mutate_at(.vars=c("lac6","perFsm6","ehc6"),.f=~ifelse(.x>0,1,0)) %>%
+  group_by(lac6,perFsm6,ehc6) %>% tally()
+
+size<-c(
+  "LAC 6" = sum(overlaps$n[overlaps$lac6==1 & overlaps$perFsm6==0 & overlaps$ehc6==0])/sum(overlaps$n),
+  "Persistent FSM"=sum(overlaps$n[overlaps$lac6==0 & overlaps$perFsm6==1 & overlaps$ehc6==0])/sum(overlaps$n),
+  "EHC 6" = sum(overlaps$n[overlaps$lac6==0 & overlaps$perFsm6==0 & overlaps$ehc6==1])/sum(overlaps$n),
+  "LAC 6&Persistent FSM" =sum(overlaps$n[overlaps$lac6==1 & overlaps$perFsm6==1 & overlaps$ehc6==0])/sum(overlaps$n),
+  "LAC 6&EHC 6" = sum(overlaps$n[overlaps$lac6==1  & overlaps$ehc6==1 & overlaps$perFsm6==0])/sum(overlaps$n),
+  "LAC 6&Persistent FSM&EHC 6"= sum(overlaps$n[overlaps$lac6==1 & overlaps$perFsm6==1 & overlaps$ehc6==1])/sum(overlaps$n),
+  "Persistent FSM&EHC 6" = sum(overlaps$n[overlaps$perFsm6==1 & overlaps$ehc6==1 & overlaps$lac6==0])/sum(overlaps$n)
+)
+
+
+
+require(vennplot)
+
+
+vPlot<-ven_tc(size,Delta=0.01)
+
+
+require(ggforce)
+vP<-data.frame(g=as.character(c(1:3)),x=vPlot$xy[,1],y=vPlot$xy[,2],r=vPlot$radius,stringsAsFactors = F)
+
+sizeDf<-data.frame(d=names(size),perc=size,stringsAsFactors = F)
+
+
+
+vD<-as.data.frame(ggplot_build(
+  ggplot()+geom_circle(data=vP,aes(x0=x,y0=y,r=r,fill=g,group=g),alpha=0.3)+scale_fill_brewer(type="qual",palette=2,name="")+xlab("")+
+    ylab("")+coord_fixed()+
+    theme_minimal()+theme(axis.text=element_blank(),
+                          axis.ticks=element_blank(),panel.grid = element_blank()))$data)
+
+#### work out centroids - this took fucking ages
+vD2<-vD %>% left_join(data.frame(g=as.character(c(1:3)),lb=vP$g),by=c("group"="g")) %>%
+  split(.$lb)
+
+require(sp)
+
+vD2<-purrr::imap(vD2,function(x,y){
+  
+  p<-list(Polygon(coords=x[,c("x","y")]))
+  
+  
+  
+  
+})
+
+vD2<-purrr::imap(vD2,function(x,y){
+  
+  vD<-Polygons(x,ID=y)
+  
+  SpatialPolygons(list(vD))
+  
+  
+})
+
+
+vD2<-purrr::imap(vD2,function(x,y){
+  
+  SpatialPolygonsDataFrame(x,data=data.frame(id = y, 
+                                             row.names = y))
+  
+  
+})
+cm<-t(combn(1:3,2))
+
+rList<-list()
+for(i in 1:3){
+  
+  g<-cm[i,1]
+  g2<-cm[i,2]
+  rList[[i]]<-raster::intersect(vD2[[g]],vD2[[g2]])
+  
+}
+
+tList<-list()
+
+for(i in 1:3){
+  
+  g<-cm[i,1]
+  g2<-cm[i,2]
+  tList[[i]]<-tryCatch({raster::intersect(rList[[g]],rList[[g2]])},error = function(e) e)
+  
+}
+
+rList2<-lapply(rList,function(x){
+  
+  
+  
+  require(raster)
+  
+  ob<-tryCatch({x - tList[[1]]},error= function(e) e)
+  
+  if(inherits(ob,"error")){
+    
+    ob<-x
+    
+  }
+  
+  if(!is.null(ob)){ 
+    if(!nrow(ob@data)==0){
+      
+      v<-paste(ob@data$id.1,ob@data$id.2,sep="&")
+      
+      coord<-as.data.frame(rgeos::gCentroid(ob))
+      
+      coord$v<-v
+      
+      coord
+    } else{
+      
+      data.frame(x=NA,y=NA,v=NA)
+      
+    }
+  } else{
+    
+    data.frame(x=NA,y=NA,v=NA)
+    
+  }}  
+)
+
+n<-c(1:3)
+
+rList3<-lapply(n,function(x){
+  require(raster)
+  
+  n1<-n[!n==x]
+  
+  n2<-n1[1]
+  
+  n3<-n1[2]
+  
+  ob<-tryCatch({vD2[[x]] - vD2[[n2]] - vD2[[n3]]},error=function(e) e)
+  
+  if(!inherits(ob,"error")){
+    if(nrow(ob@data)>0){ 
+      v<-ob@data$id
+      
+      coord<-as.data.frame(rgeos::gCentroid(ob))
+    } else{
+      
+      v<-levels(ob@data$id)
+      
+      coord<-as.data.frame(rgeos::gCentroid(vD2[[x]]))
+    }
+    coord$v<-v
+    
+    coord} else{
+      
+      v<-vD2[[x]]@data$id
+      
+      coord<-as.data.frame(rgeos::gCentroid(vD2[[x]]))
+      coord$v<-v
+      coord
+    }
+  
+})
+
+if(!inherits(tList[[1]],"error") && !is.null(tList[[1]])){
+  all<-as.data.frame(rgeos::gCentroid(tList[[1]]))
+  
+  
+  all$v<-"LAC 6&Persistent FSM&EHC 6"
+  
+  
+  
+  centDf<-rbind(do.call("rbind",rList2),all,
+                do.call("rbind",rList3))} else{
+                  
+                  centDf<-rbind(do.call("rbind",rList2),
+                                do.call("rbind",rList3))
+                  
+                }
+
+
+centDf<- centDf %>%
+  mutate(v=gsub("1","LAC 6",v)) %>%
+  mutate(v=gsub("2","Persistent FSM",v)) %>%
+  mutate(v=gsub("3","EHC 6",v)) %>%
+  left_join(
+  sizeDf %>% mutate(perc=ifelse(perc<0.001,paste0("<0.1%\n(",format(round(perc*nrow(tb)),big.mark=","),")"),
+                                                            paste0(round(perc,3)*100,"%\n(",format(round(perc*nrow(tb)),big.mark=","),")")
+                                                            )
+                                                ),by=c("v"="d")) %>%
+  mutate_at(.vars=c("x","y"),.f=~round(.x,3)) %>% distinct(x,y,.keep_all = T)
+
+detach("package:raster", unload=TRUE)
+
+
+ggplot()+geom_circle(data=vP %>%
+                       mutate(g=row.names(vP)),aes(x0=x,y0=y,r=r,fill=g),alpha=0.3)+ geom_text(data = centDf,aes(x=x,y=y,label=perc))+
+  scale_fill_brewer(type="qual",palette=2,name="")+xlab(NULL)+
+  ylab(NULL)+coord_fixed()+
+  theme_minimal()+theme(axis.text=element_blank(),
+                        axis.ticks=element_blank(),panel.grid = element_blank(),plot.margin=unit(c(0,0,0,0),"mm")) + guides(fill=guide_legend(
+                          keywidth=0.2,
+                          keyheight=0.45,
+                          default.unit="inch")
+                        )
+```
+
+### Variation by demographic characteristics
+
+`r tbCap("tb_gender","Relationship between gender and disadvantage indicators","cite")` below demonstrates the relationship between these demographic characteristics and gender. It shows that there is mostly little relationship with gender, however those children who are SEN 6 are more likely to be male, driven by the strong gender disparity in the EHCP 6 group (72% of whom are male). Since children in the various SEN groups are more likely to be male, the various combinations that involve SEN are also more likely to be male.
+
+```{r, include=F}
+
+tb<-tb[,eth_sum:=ifelse(eth %in% c("","NOBT","REFU"),"Unknown/refused",
+                        ifelse(grepl("^A",eth),"Asian (exc Chinese)",
+                               ifelse(grepl("^C",eth),"Chinese",
+                               ifelse(grepl("^B",eth),"Black",
+                                      ifelse(grepl("^M",eth),"Mixed",
+                                             ifelse(grepl("^O",eth),"Other",
+                                                          ifelse(eth %in% c("WBRI","WENG","WSCO","WWEL","WCOR"),"White - British",
+                                                                 ifelse(grepl("^W",eth),"White - other",NA))))))))
+                        ]
+
+tb<-tb[,`:=`(gender=plyr::mapvalues(gender,c("M","F"),c("Male","Female")),
+           eal=plyr::mapvalues(eal,c(1,2,3,NA),c("English as first language","English as additional language","Unknown","Unknown")))][,eth_gender:=paste0(eth_sum,": ",gender)]
+
+```
+
+```{r, results='asis'}
+
+for(x in c("gender","eal","eth_sum")){
+  
+  cols<-c("pmr","sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns")
+  
+  cols_all<-c(cols,x)
+  
+  chars<-melt(tb[,..cols_all],id.vars=c("pmr",x)
+       )[,.(c=.N),by=.(variable,value,var=get(x))
+         ][value==1
+           ][,value:=NULL
+             ][,perc:=round(c/sum(c),2)*100,by=.(variable)
+               ][,use:=paste0(perc,"% (",format(c,big.mark=","),")")
+                 ][,`:=`(c=NULL,perc=NULL)][,group:=ifelse(variable %in% c("cin6","lac6","cpp6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6"),"SEN","Summary")))
+                       ]
+  
+  
+  chars$variable<-plyr::mapvalues(chars$variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in last 6 years","Any SEN without a statement/EHC plan in the last 6 years","Any statement/EHC plan in the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+
+  av<-tb[,.(c=.N),by=.(get(x))
+     ][,perc:=c/sum(c)][,`:=`(variable="Cohort average",var=get,use=paste0(round(perc,2)*100,"% (",format(c,big.mark=","),")"))
+                        ][,.(var,variable,use)][,group:="Summary"]
+
+  if(x=="eth_sum"){
+    chars<-chars[!var=="Unknown/refused"]
+    
+    av<-av[!var=="Unknown/refused"]
+  }
+  tb_out<-dcast(rbind(chars,av,use.names=T),group+variable~var,value.var = "use")
+  
+  names(tb_out)[1:2]<-c("Disadvantage type","Disadvantage indicator")
+
+  if(x=="eal"){
+    
+    cat(tbCap(paste0("tb_",x),
+           ifelse(x=="gender","Relationship between gender and disadvantage indicators",
+                  ifelse(x=="eth_sum","Relationship between ethnicity and disadvantage indicators",
+                         "Relationship between first language and disadvantage indicators")),"cite")
+     )
+    
+    cat(" shows that pupils with English as an additional language are slightly underrepresented in the CIN 6 and SEN 6 groups, but slightly overrepresented in the FSM 6 group.\n\n")
+  }
+  
+  if(x=="eth_sum"){
+    
+    cat(tbCap(paste0("tb_",x),
+           ifelse(x=="gender","Relationship between gender and disadvantage indicators",
+                  ifelse(x=="eth_sum","Relationship between ethnicity and disadvantage indicators",
+                         "Relationship between first language and disadvantage indicators")),"cite")
+     )
+    
+    cat(" shows that while ethnic minority pupils are not overall over or underrepresented in the CIN 6 group, they are overrepresented in the FSM groups and underrepresented in the SEN groups.\n\n")
+  }
+   
+ cat("**")    
+     cat(tbCap(paste0("tb_",x),
+           ifelse(x=="gender","Relationship between gender and disadvantage indicators",
+                  ifelse(x=="eth_sum","Relationship between ethnicity and disadvantage indicators",
+                         "Relationship between first language and disadvantage indicators")))
+     )
+  cat("**\n")
+
+cat("\n")
+
+if(doc=="docx"){   
+flextable::docx_value(tbF(tb_out))
+}else{
+  print(tbF(tb_out))
+}
+cat("\n")
+
+}
+```
+
+### Variation by school type
+
+```{r}
+
+sctypes<-fread("nftypes.csv")
+
+tb<-merge(tb,sctypes[,.(sctype=NFTYPE,sctype_desc=Description)],all.x=T,by="sctype")
+
+tb<-tb[,scCat:=ifelse(grepl("special",tolower(sctype_desc)),"Special school",
+                      ifelse(grepl("ap|alternative provision|referral unit",tolower(sctype_desc)),"PRU/AP",
+                             ifelse(sctype_desc %in% c("Community School","Voluntary Aided School",
+                                                  "Voluntary Controlled School","Foundation School"),"Mainstream - LA maintained",
+                                    ifelse(sctype_desc %in% c("Academy - Sponsor Led","Academy - Converter"),
+                                           "Mainstream - academy",
+                                           ifelse(grepl("free school",tolower(sctype_desc)),"Mainstream - Free school","Other")))))]
+
+```
+
+`r tbCap("tb_sc","Proportions of children that are CIN/FSM/SEN 6 by school type at Key Stage 4","cite")` below demonstrates that children with these disadvantage indicators over-represent slightly amongst children in special schools and alternative provision or pupil referral units (PRUs) than the rest of the cohort. For example, 4% of children that have been CIN/FSM or SEN in the last 6 years were in a special school at Key Stage 4 compared to 2% of the overall cohort. These differences are larger for those at higher thresholds, for example 9% of those looked after at any point in the last 6 years were in a PRU or alternative provision at key stage 4 compared to 1% of the entire cohort.
+
+**`r tbCap("tb_sc")`**
+
+```{r}
+
+sc_long<-melt(tb[,.(pmr,scCat,sen6,fsm6,cin6,cpp6,lac6,perFsm6,sns6,ehc6,any3,all3,any3_sns,all3_sns)],id.vars=c("pmr","scCat")
+     )[,.(c=.N),by=.(scCat,variable,value)
+       ][,perc:=c/sum(c),by=.(variable,value)
+         ][value==1][,group:=ifelse(variable %in% c("cin6","lac6","cpp6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6"),"SEN","Summary")))
+                       ][,variable:=plyr::mapvalues(variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in last 6 years","Any SEN without a statement/EHC plan in the last 6 years","Any statement/EHC plan in the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))]
+
+av_scCat<-tb[,.(c=.N),by=.(scCat)
+             ][,perc:=c/sum(c)
+               ][,variable:="Cohort average"][,group:="Summary"]
+
+tb_out<-dcast(rbind(copy(sc_long)[,value:=NULL],av_scCat,use.names=T)[,use:=paste0(round(perc,2)*100,"% (",format(c,big.mark=","),")")
+                            ][,`:=`(c=NULL,perc=NULL)],group+variable~scCat,value_var="use")
+
+names(tb_out)[1:2]<-c("Disadvantage type","Disadvantage indicator")
+
+tbF(
+  tb_out
+)
+
+```
+
+
+### LA distributions in rates of CIN/FSM/SEN 6 children based on LA of residence
+
+*Note: figures below exclude children with no LSOA recorded in the summer school census or where their recorded LSOA indicates they live outside of England*
+
+`r tbCap("tb_la","Variation in proportion of cohort in each LA who have CIN/FSM/SEN characteristics in the last 6 years","cite")` demonstrates that there is large variation between local authorities in rates of children who have been CIN/FSM/SEN in the last 6 years. Rates of those with any of these characteristics range from under 1 in 3 to nearly 3 in 4 across English local authorities. The biggest variation is in the FSM 6 group, which ranges from 9% of pupils to 58% of pupils across LAs.
+
+This table also indicates large variations in rates of children that have identified SEN in the last 6 years and those with time in contact with children’s services in the last 6 years. These range from 21% to 42% and 5% to 24% respectively across LAs in England.
+
+
+**`r tbCap("tb_la")`**
+
+```{r}
+
+tb_out<-unique(melt(tb[!is.na(la_home)][,.(pmr,la_home,sen6,fsm6,cin6,cpp6,lac6,perFsm6,sns6,ehc6,any3,all3,any3_sns,all3_sns)],id.vars = c("pmr","la_home")
+     )[,.(c=.N),by=.(la_home,variable,value)
+       ][,perc:=c/sum(c),by=.(la_home,variable)
+         ][value==1][,group:=ifelse(variable %in% c("cin6","lac6","cpp6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6"),"SEN","Summary")))
+                       ][,variable:=plyr::mapvalues(variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in last 6 years","Any SEN without a statement/EHC plan in the last 6 years","Any statement/EHC plan in the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+                     ][,.(`Lowest LA rate (%)`=round(min(perc),2)*100,`25th percentile`=round(quantile(perc,0.25),2)*100,`Median`=round(quantile(perc,0.5),2)*100,`75th percentile`=round(quantile(perc,0.75),2)*100,`Highest LA rate (%)`=round(max(perc),2)*100),by=.(Group=group,Characteristic=variable)]
+     )[order(Group)]
+
+names(tb_out)[1:2]<-c("Disadvantage type","Disadvantage indicator")
+
+
+tbF(tb_out)
+
+```
+
+```{r, results='asis'}
+if(doc=="docx"){
+
+tb_out<-unique(melt(tb[!is.na(la_home)][,.(pmr,la_home_code,sen6,fsm6,cin6,any3)],id.vars = c("pmr","la_home_code")
+     )[,.(c=.N),by=.(la_home_code,variable,value)
+       ][,perc:=c/sum(c),by=.(la_home_code,variable)
+         ][value==1][,group:=ifelse(variable %in% c("cin6","lac6","cpp6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6"),"SEN","Summary")))
+                       ][,variable:=plyr::mapvalues(variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in last 6 years","Any SEN without a statement/EHC plan in the last 6 years","Any statement/EHC plan in the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+                     ])
+
+la_map<-rgeos::gBuffer(
+   readRDS("laBase_19.rds"),
+   byid=T,width=0)
+
+
+la_map<-broom::tidy(la_map,region="ctyua19cd") %>%
+   mutate(id=as.character(id))
+
+la_map$id[la_map$id=="E08000037"]<-"E08000020"
+la_map$id[la_map$id=="E06000057"]<-"E06000048"
+
+
+la_map<-la_map %>% left_join(tb_out,by=c("id"="la_home_code"))
+
+pal<-RColorBrewer::brewer.pal(9,"Reds")
+
+
+for(i in unique(la_map$variable)){
+
+   map<-la_map %>% filter(variable==i) %>%
+   ggplot(aes(x=long,y=lat,group=group.x,fill=perc*100))+
+         geom_polygon(colour="grey20")+
+         scale_fill_gradient(low=pal[1],high=pal[9],name=paste0("% ",i))+
+         theme_minimal()+theme(panel.grid=element_blank(),
+                               axis.ticks = element_blank(),
+                               axis.text=element_blank(),
+                               axis.title = element_blank())
+   
+   cat("**")    
+     cat(figCap(paste0("tb_",i),
+           paste0("Map of LA variation in percentage of children with ",gsub("Any","any",i)))
+     )
+  cat("**\n")
+
+cat("\n")
+   
+print(map)
+
+
+cat("\n\n")
+}
+
+}else{
+
+
+
+tb_map<-unique(melt(tb[!is.na(la_home)][,.(pmr,la_home_code,sen6,fsm6,cin6,any3,sns6,ehc6,lac6,perFsm6,cpp6)],id.vars = c("pmr","la_home_code")
+     )[,.(c=.N),by=.(la_home_code,variable,value)
+       ][,perc:=c/sum(c),by=.(la_home_code,variable)
+         ][value==1]
+)
+
+leaf_poly<-readRDS("laBase_19.rds")
+
+tb_map$la_home_code[tb_map$la_home_code=="E08000020"]<-"E08000037"
+tb_map$la_home_code[tb_map$la_home_code=="E06000048"]<-"E06000057"
+
+tb_count<-dcast(tb_map[,.(la_home_code,variable,c)],la_home_code~variable,value.var="c")
+
+names(tb_count)[2:length(names(tb_count))]<-paste0(names(tb_count)[2:length(names(tb_count))],"_count")
+
+tb_map<-dcast(tb_map[,.(la_home_code,variable,perc)],la_home_code~variable,value.var="perc")
+
+for(i in c("sen6","fsm6","cin6","any3","sns6","ehc6","cpp6","lac6","perFsm6")){
+  
+  vnm<-paste0(i,"_scale")
+  
+  tb_map<-tb_map[,(vnm):=scales::rescale(get(i),c(0,1))]
+  
+}
+
+require(leaflet)
+
+pal2<-colorNumeric("Reds",c(0,1))
+
+leaf_poly@data<-merge(leaf_poly@data,tb_map,by.x="ctyua19cd",by.y="la_home_code",all.x=T)
+
+leaf_poly@data<-merge(leaf_poly@data,tb_count,by.x="ctyua19cd",by.y="la_home_code",all.x=T)
+
+labels<-lapply(c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6"),function(x){
+  
+  lb<-plyr::mapvalues(x,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("have any SEN in last 6 years","have any SEN without a statement/EHC plan in the last 6 years","have any statement/EHC plan in the last 6 years","Children looked after at have any point in the last 6 years","have any FSM in last 6 years","are persistently FSM eligible over 6 years","have any CIN in last 6 years","have any Child Protection Plan in the last 6 years",
+                                   "have any CIN/SEN/FSM in last 6 years","have any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+  
+  substr(lb,1,1)<-tolower(substr(lb,1,1))
+  
+  paste0("LA: ",leaf_poly@data$ctyua19nm,"</br>Measure: Children in LA's</br>KS4 cohort who</br>",lb,"</br>% of LA cohort: ",round(leaf_poly@data[,x],2)*100,"%,<br/>Count: ",leaf_poly@data[,paste0(x,"_count")])
+  
+  
+})
+
+for(i in seq_len(length(labels))){
+  
+  labels[[i]]<-lapply(labels[[i]],htmltools::HTML)
+  
+}
+
+names(labels)<-c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6")
+
+cat("\n\n")
+
+cat("**")
+cat(figCap("map_laDist","Proportion of KS4 cohort in LA with each CIN/FSM/SEN 6 characteristic"))
+
+cat("**\n\n")
+
+leaflet(data=leaf_poly, options = leafletOptions(background="#FFF"),
+        elementId = "la_map_1") %>%
+  addProviderTiles(providers$CartoDB) %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(sen6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["sen6"]],group="SEN 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(sns6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["sns6"]],group="SEN support 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(ehc6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["ehc6"]],group="EHC 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(fsm6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["fsm6"]],group="FSM 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(perFsm6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["perFsm6"]],group="Persistent FSM")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(cin6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["cin6"]],group="CIN 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(cpp6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["cpp6"]],group="CPP 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(lac6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["lac6"]],group="LAC 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(any3_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["any3"]],group="Any CIN/SEN/FSM 6")  %>%
+  addLayersControl(
+    baseGroups = c("SEN 6","SEN support 6","EHC 6","FSM 6","Persistent FSM","CIN 6","CPP 6","LAC 6","Any CIN/SEN/FSM 6"),
+    options = layersControlOptions(collapsed = FALSE)) %>%
+  addLegend("topleft", pal = pal2, values = seq(0,1),bins=5,
+            labFormat = function(type, cuts, p) { 
+              n = length(cuts) 
+              cuts[n] = "Highest rate" 
+              for (i in 2:(n-1)){cuts[i] = " "} 
+              cuts[1] = "Lowest rate" 
+              paste0(cuts[-n], cuts[-1])},
+            title = "% of children in</br>KS4 cohort</br>in LA",
+            na.label = "Missing/excluded",
+            opacity = 0.7,className = "la_map_legend_1"
+  )
+}
+```
+
+```{r, results='asis',echo=F,warning=F}
+if(!doc=="docx"){
+
+tb_map<-as.data.frame(tb_map)
+
+minVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3"),function(x){
+     
+     paste0(round(min(tb_map[,x],na.rm=T)*100,1),"%")
+    
+   }) 
+
+maxVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3"),function(x){
+     
+     paste0(round(max(tb_map[,x],na.rm=T)*100,1),"%")
+    
+   }) 
+
+
+minVals<-jsonlite::toJSON(minVals,"values")
+
+maxVals<-jsonlite::toJSON(maxVals,"values")
+
+cat(paste0('<script>
+  
+  window.addEventListener("load", function () {
+    var eles = document.getElementById("la_map_1");
+    
+    var layer_select = eles.querySelector(".leaflet-control-layers")
+    
+    layer_select.insertAdjacentHTML("afterbegin","<span style=',"'","margin-bottom:3px;font-weight:bold","'",'>Select measure to view:</span>")
+
+
+
+  var maxArr = ',maxVals,';
+
+  var minArr = ',minVals,';
+
+  var legendEntries = eles.getElementsByClassName("leaflet-control-layers-selector")
+
+  for (var i=0; i < legendEntries.length; i++){
+
+  legendEntries[i].setAttribute("minval_map",minArr[i])
+
+  legendEntries[i].setAttribute("maxval_map",maxArr[i])
+
+  }
+
+var legend_1 = eles.querySelector(".la_map_legend_1")
+
+  var legEntries_1 = legend_1.getElementsByTagName("text")
+
+  legEntries_1[0].innerHTML = minArr[0]
+
+  legEntries_1[0].setAttribute("dx",50)
+
+  legEntries_1[legEntries_1.length - 1].innerHTML = maxArr[0]
+
+  legEntries_1[legEntries_1.length - 1].setAttribute("dx",50)
+
+  var legendTitle_1 = legend_1.getElementsByTagName("strong")
+
+
+
+f3 = function(){
+
+  var minVal_var = this.getAttribute("minval_map")
+
+  var maxVal_var = this.getAttribute("maxval_map")
+
+ 
+     
+      var legend = eles.querySelector(".la_map_legend_1")
+    
+      var legEntries = legend.getElementsByTagName("text")
+    
+      legEntries[0].innerHTML = minVal_var
+    
+      legEntries[0].setAttribute("dx",50)
+    
+      legEntries[legEntries.length - 1].innerHTML = maxVal_var
+    
+      legEntries[legEntries.length - 1].setAttribute("dx",50)
+
+
+  }
+
+  for (var i=0; i < legendEntries.length; i++){
+
+  legendEntries[i].addEventListener("click",f3)
+
+  }
+    
+})
+
+  
+  
+
+  </script>'
+  ))
+
+}
+```
+
+
+
+`r tbCap("tb_la2","Variation in proportion of cohort in each LA (based on child's KS4 school location) who have CIN/FSM/SEN characteristics in the last 6 years","cite")` demonstrates similar large variation based on the LA where children attend school (as opposed to the LA of residence).
+
+**`r tbCap("tb_la2")`**
+
+```{r}
+
+
+tb_out<-unique(melt(tb[!is.na(la)][,.(pmr,la,sen6,fsm6,cin6,cpp6,lac6,perFsm6,sns6,ehc6,any3,all3,any3_sns,all3_sns)],id.vars = c("pmr","la")
+     )[,.(c=.N),by=.(la,variable,value)
+       ][,perc:=c/sum(c),by=.(la,variable)
+         ][value==1][,group:=ifelse(variable %in% c("cin6","lac6","cpp6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6"),"SEN","Summary")))
+                       ][,variable:=plyr::mapvalues(variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in last 6 years","Any SEN without a statement/EHC plan in the last 6 years","Any statement/EHC plan in the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+                     ][,.(`Lowest LA rate (%)`=round(min(perc),2)*100,`25th percentile`=round(quantile(perc,0.25),2)*100,`Median`=round(quantile(perc,0.5),2)*100,`75th percentile`=round(quantile(perc,0.75),2)*100,`Highest LA rate (%)`=round(max(perc),2)*100),by=.(Group=group,Characteristic=variable)]
+     )[order(Group)]
+
+tbF(tb_out)
+```
+
+## Rates of persistent disadvantage
+
+The sections below additional detail on the length of time for which these pupils had these disadvantage indicators – SEN, FSM or CIN – in the 6 years prior to their Key Stage 4 exams.
+
+### SEN histories
+
+```{r, include=F}
+
+tb[sen6==1
+   ][,always_sen:=ifelse(tot_sen==tot_term,1,0)
+     ][,.(c=.N),by=always_sen
+       ][,perc:=c/sum(c)][]
+
+round(tb[sen6==1
+   ][,prop_sen:=tot_sns/tot_term*100
+     ][,.(mean_prop=mean(prop_sen),median=quantile(prop_sen,0.5),
+          low25=quantile(prop_sen,0.25),high25=quantile(prop_sen,0.75))]
+)
+
+tb[ehc6==1
+   ][,always_sen:=ifelse(tot_sen==tot_term,1,0)
+     ][,.(c=.N),by=always_sen
+       ][,perc:=c/sum(c)][]
+
+tb[sns6==1
+   ][,always_sen:=ifelse(tot_sen==tot_term,1,0)
+     ][,.(c=.N),by=always_sen
+       ][,perc:=c/sum(c)][]
+
+round(tb[ehc6==1
+   ][,prop_sen:=tot_ehc/tot_term*100
+     ][,.(mean_prop=mean(prop_sen),median=quantile(prop_sen,0.5),
+          low25=quantile(prop_sen,0.25),high25=quantile(prop_sen,0.75))]
+)
+
+tb[sen6==1
+   ][,.(c=.N),by=.(senSum19)
+     ][,perc:=round(c/sum(c),2)*100]
+
+npd_yrs<-as.data.table(dbGetQuery(con,"SELECT * from anne_speech_yrs"))
+
+persist_tb<-copy(tb)[,.(pmr,tot_sen,tot_fsm,tot_cin,l2_4,tot_term,perFsm6,la_home)
+        ][,`:=`(senCat=ifelse(tot_sen/tot_term ==0, "Not SEN 6",
+                              
+                              ifelse(tot_sen/tot_term <= 1/3 ,"<= 1/3 of\npossible terms",
+                                     ifelse(tot_sen/tot_term <= 2/3, "1/3 - 2/3 of\npossible terms",
+                                            "2/3+ of\npossible terms" ))),
+                fsmCat=ifelse(tot_fsm/tot_term ==0, "Not FSM 6",ifelse(tot_fsm/tot_term <= 1/3 ,"<= 1/3 of\npossible terms",
+                                     ifelse(tot_fsm/tot_term <= 2/3, "1/3 - 2/3 of\npossible terms",
+                                            "2/3+ of\npossible terms"))),
+                cinCat=ifelse(tot_cin==0 | is.na(tot_cin),"Not CIN 6",
+                              ifelse(tot_cin<=2,"<= 2 years with\na CIN episode",
+                                     ifelse(tot_cin<=4,"2-4 years with\na CIN episode","5-6 years with\na CIN episode")))
+                )
+          ][,`:=`(perCin6=ifelse(tot_cin>=4,1,0),perSen6=ifelse(tot_sen/tot_term==1,1,0))]
+
+time_tb<-melt(persist_tb[,.(pmr,senCat,fsmCat,cinCat)],id.vars=c("pmr")
+     )[,.(c=.N),by=.(variable,value)
+       ][!grepl("Not",value)][,perc:=c/sum(c),by=.(variable)
+         ][,value:=factor(value,
+                            levels=c("Not SEN 6","Not FSM 6","Not CIN 6",
+                                     "<= 1/3 of\npossible terms","1/3 - 2/3 of\npossible terms","2/3+ of\npossible terms","FSM for all possible terms","<= 2 years with\na CIN episode","2-4 years with\na CIN episode","5-6 years with\na CIN episode"))
+             ][,variable:=plyr::mapvalues(variable,c("senCat","fsmCat","cinCat"),
+                                          c("Time as SEN 6","Time as FSM 6","Time as CIN 6"))
+               ]
+
+
+tb<-merge(tb,npd_yrs,by="pmr")
+
+```
+
+
+Within the SEN 6 group, 1 in 4 (28%) had SEN in every term for which they are recorded in the NPD over the previous 6 years (equivalent to 8% of the cohort overall). Just under half of the SEN 6 group had identified SEN for less than a third of possible terms, as show in `r tbCap("sen_dur","% of SEN 6 children by proportion of possible terms identified as SEN in the previous 6 years","cite")`. 
+
+**`r tbCap("sen_dur")`**
+
+```{r}
+tbF(
+time_tb[variable=="Time as SEN 6"
+        ][order(value)
+          ][,use:=paste0(round(perc,2)*100,"% (",format(c,big.mark = ","),")")
+            ][,.(`Length of time as SEN`=value,`% of SEN 6`=use)]
+)
+
+```
+
+**`r tbCap("sen_dur_yr","% of SEN 6 children by number of years with at least 1 term with identified as SEN in the previous 6 years Note: years can be non-consecutive")`**
+
+```{r}
+tbF(tb[sen6==1,.(c=.N),
+   by=sen_yrs][,perc:=round(c/sum(c),2)*100
+               ][order(sen_yrs)
+                 ][,c:=format(c,big.mark = ",")][,.(`Number of years SEN for at least 1 term`=sen_yrs,`Number of pupils`=c,`% of SEN 6`=perc)
+                   ]
+)
+```
+
+
+This varies notably by the level of SEN support the children have received over the period. For example, 88% of children with an EHC plan at any point during the 6 years have had it for all possible terms compared to 20% amongst children with SEN but no EHC plan. 52% of those with identified SEN at some point in the previous 6 years are recorded as having SEN in the summer pupil census 2019.
+
+The proportion of this SEN 6 group with both an EHC plan at some point and a term as SEN without a statement/EHC plan is relatively small, suggesting that children do not move between levels of support extensively during this six year period. 4% of this SEN 6 group have both time with an EHC plan and time with SEN but no EHC plan recorded over the last 6 years (`r tbCap("tb_sen_hist","Types of SEN support received by children in this SEN 6 group over the last 6 years ","cite")`). The vast majority of this group receive SEN support without a statement/EHC plan.
+
+
+**`r tbCap("tb_sen_hist")`**
+
+```{r}
+
+tbF(tb[sen6==1
+   ][,`:=`(sencat=ifelse(tot_ehc==0,"Only SEN but no statement/EHC plan",
+                         ifelse(tot_sns==0,"Only EHC",
+                                ifelse(tot_ehc>0 & tot_sns>0,"Both",NA))))
+           ][,.(Count=.N),by=.(`SEN history over previous 6 years`=sencat)
+             ][,`% of SEN 6 group`:=round(Count/sum(Count),2)*100]
+)
+
+```
+
+
+### FSM histories
+
+```{r, include=F}
+
+tb[fsm6==1
+   ][,always_fsm:=ifelse(tot_fsm==tot_term,1,0)
+     ][,.(c=.N),by=always_fsm
+       ][,perc:=c/sum(c)][]
+
+
+round(tb[fsm6==1
+   ][,prop_fsm:=tot_fsm/tot_term*100
+     ][,.(mean_prop=mean(prop_fsm),median=quantile(prop_fsm,0.5),
+          low25=quantile(prop_fsm,0.25),high25=quantile(prop_fsm,0.75))]
+)
+
+tb<-tb[,prop_fsm:=tot_fsm/tot_term*100
+     ][,perFsm6:=ifelse(prop_fsm==100,1,0)]
+
+tb[fsm6==1
+   ][,.(c=.N),by=.(fsmSum19)
+     ][,perc:=round(c/sum(c),2)*100][]
+
+```
+
+29% of children that are eligible for free school meals at some point over the previous 6 years have been eligible for all of the terms they are present in the national pupil database (equivalent to 7% of the cohort overall). Half of children in this FSM 6 group have been FSM eligible for more than 60% of possible terms. 60% of this FSM 6 group are eligible for free school meals in summer term 2019 (`r tbCap("fsm_dur","% of FSM 6 children by proportion of possible terms FSM eligible in the previous 6 years","cite")`).
+
+**`r tbCap("fsm_dur")`**
+
+```{r}
+tbF(
+time_tb[variable=="Time as FSM 6"
+        ][order(value)
+          ][,use:=paste0(round(perc,2)*100,"% (",format(c,big.mark = ","),")")
+            ][,.(`Length of time as FSM`=value,`% of FSM 6`=use)]
+)
+
+```
+
+**`r tbCap("fsm_dur_yr","% of FSM 6 children by number of years with at least 1 term eligible for free school meals in the previous 6 years Note: years can be non-consecutive")`**
+
+```{r}
+tbF(tb[fsm6==1,.(c=.N),
+   by=fsm_yrs][,perc:=round(c/sum(c),2)*100
+               ][order(fsm_yrs)
+                 ][,c:=format(c,big.mark = ",")][,.(`Number of years FSM eligible for at least 1 term`=fsm_yrs,`Number of pupils`=c,`% of FSM 6`=perc)
+                   ])
+```
+
+### CIN histories
+
+```{r, include=F}
+tb[cin6==1
+   ][,always_cin:=ifelse(tot_cin==6,1,0)
+     ][,.(c=.N),by=always_cin
+       ][,perc:=c/sum(c)][]
+
+
+
+tb[cin6==1
+   ][,.(c=.N),by=cpp6][,perc:=c/sum(c)
+                       ][]
+
+
+tb[cpp6==1
+   ][,.(c=.N),by=.(`Years CPP`=tot_cpp)
+     ][,perc:=round(c/sum(c),2)*100][order(`Years CPP`)][]
+
+tb[cin6==1
+   ][,.(c=.N),by=lac6][,perc:=c/sum(c)
+                       ][]
+
+tb[cin6==1
+   ][,.(c=.N),by=.(cpp6,lac6)
+     ][,perc:=c/sum(c)][]
+
+
+```
+
+A comparatively small proportion (7%) of the CIN 6 group have an open CIN episode with children’s services in all 6 years prior to their Key Stage 4 exams (`r tbCap("tb_cin_hist","Proportion of CIN 6 children in cohort by number of years with an open CIN episode. Note: years can be non-consecutive","cite")`). This is unsurprising given that often a child starting a child in need episode is intended as a short term intervention. The vast majority (80%) are in contact in 3 years or fewer. Nearly half of these children (44%) are on a CIN plan in only one year.
+
+**`r tbCap("tb_cin_hist")`**
+
+```{r}
+tbF(tb[cin6==1
+   ][,.(Count=.N),by=.(`Years CIN`=tot_cin)
+     ][,`% of CIN 6`:=round(Count/sum(Count),2)*100][order(`Years CIN`)]
+)
+
+```
+
+Just under 1 in 5 CIN 6 children have time on a child protection plan during this 6 year period (`r tbCap("tb_cpp_hist","Proportion of CIN 6 children by number of years with an open Child Protection Plan (CPP). Note: years can be non-consecutive","cite")`). Around 1 in 10 of this CIN 6 group have multiple years on a CPP during this 6 year period.
+
+**`r tbCap("tb_cpp_hist")`**
+   
+```{r}
+tbF(tb[cin6==1
+   ][,.(Count=.N),by=.(`Years CPP`=tot_cpp)
+     ][,`% of CIN 6`:=round(Count/sum(Count),2)*100][order(`Years CPP`)]
+)
+```
+
+Just over 1 in 10 (7,500) of this CIN 6 group have any time looked after and around 2,000 (3% of children in this CIN 6 group) of these are looked after in all 6 years (`r tbCap("tb_lac_hist","Proportions of CIN 6 children by numbers of year with at least one day in care (excluding respite care spells). Note: years do not have to be consecutive","cite")`).
+
+**`r tbCap("tb_lac_hist")`**
+
+```{r}
+tbF(tb[cin6==1
+   ][,.(Count=.N),by=.(`Years LAC`=tot_lac)
+     ][,`% of CIN 6`:=round(Count/sum(Count),2)*100][order(`Years LAC`)]
+)
+```
+
+75% of CIN 6 children only have spells as children in need rather than at the higher CPP or LAC thresholds. Just under 1 in 20 of CIN 6 children have time on both a CPP and as LAC during the 6 years (`r tbCap("tb_cin_hist2","Proportions of CIN 6 children with any time on a Child Protection Plan or in care in the last 6 years","cite")`).
+
+**`r tbCap("tb_cin_hist2")`**
+
+```{r}
+
+tbF(tb[cin6==1
+   ][,.(count=.N),by=.(`CPP 6`=cpp6,`LAC 6`=lac6)
+     ][,`% of CIN 6 children`:=round(count/sum(count),2)*100
+       ][,`:=`(`Any child protection plan`=ifelse(`CPP 6`==1,"Yes","No"),
+               `Any time in care`=ifelse(`LAC 6`==1,"Yes","No"))
+         ][,.(`Any child protection plan`,`Any time in care`,Count=count,`% of CIN 6 children`)],
+   merge=F
+)
+
+```
+
+### Variation in persistent disadvantage rates by local authority
+
+For the purposes of this analysis we focus on three measures of persistent disadvantage in the tables below:
+
+* Children who are eligible for free school meals in all of the terms they are matched in the national pupil database (persistently FSM - 7% of the cohort overall)
+* Children who identified SEN in all of the terms they are matched in the national pupil database (persistently SEN - 8% of the cohort overall)
+* Children who have an open CIN episode in 4 or more of the 6 years prior to their KS4 exams (persistently CIN - 2% of the cohort overall).
+
+`r tbCap("la_persist","Variation in proportion of cohort in each LA who have persistent CIN/FSM/SEN characteristics in the last 6 years, based on child's LA of residence","cite")` demonstrates similarly wide variation in rates between LAs of those with these persistent disadvantage indicators. This is most marked amongst children with persistent FSM where rates range from 1% to just over 1 in 4 in the LA with the highest rate.
+
+**`r tbCap("la_persist")`**
+
+```{r}
+
+tb_out<-unique(melt(persist_tb[!is.na(la_home)][,.(pmr,la_home,perFsm6,perSen6,perCin6)],id.vars = c("pmr","la_home")
+     )[,.(c=.N),by=.(la_home,variable,value)
+       ][,perc:=c/sum(c),by=.(la_home,variable)
+         ][value==1][,variable:=plyr::mapvalues(variable,
+                                 c("perFsm6","perSen6","perCin6"),
+                                 c("Children persistently FSM eligible over 6 years","Children persistently SEN over 6 years","Children persistently CIN over 6 years"))
+                     ][,.(`Lowest LA rate (%)`=round(min(perc),2)*100,`25th percentile`=round(quantile(perc,0.25),2)*100,`Median`=round(quantile(perc,0.5),2)*100,`75th percentile`=round(quantile(perc,0.75),2)*100,`Highest LA rate (%)`=round(max(perc),2)*100),by=.(`Disadvantage indicator`=variable)]
+     )[]
+
+tbF(tb_out)
+
+```
+
+
+## Findings: Key Stage 4 outcomes for CIN/SEN/FSM 6 children
+
+`r tbCap("tb_av94","Proportions of each group achieving levels 9-4 in KS4 english and maths","cite")` demonstrates that children in the CIN 6, FSM 6 and SEN 6 groups are considerably less likely than the overall KS4 population to achieve levels 9-4 in KS4 English and Maths. 42% of those with any CIN/FSM or SEN in the last 6 years achieved this benchmark (43% excluding children with an EHC plan in the last 6), compared with a cohort average of 64%. Lowest rates are amongst children with any EHC plans over the last 6 years (12%) and children that were looked after over the last 6 years (23%).
+
+**`r tbCap("tb_av94")`**
+
+```{r}
+
+tb_out_94<-melt(tb[,`:=`(perCin6=ifelse(tot_cin>=4,1,0),perSen6=ifelse(tot_sen/tot_term==1,1,0))][,.(pmr,l2_4,sen6,fsm6,cin6,cpp6,lac6,perFsm6,sns6,ehc6,any3,all3,any3_sns,all3_sns,perSen6,perCin6)],id.vars = c("pmr","l2_4")
+     )[,.(c=.N),by=.(variable,value,l2_4)
+       ][,perc:=round(c/sum(c),2)*100,by=.(variable,value)
+         ][value==1 & l2_4==1
+           ][,value:=NULL
+                     ][,group:=ifelse(variable %in% c("cin6","lac6","cpp6","perCin6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6","perSen6"),"SEN","Summary")))
+                       ][,use:=paste0(perc,"% (",format(c,big.mark = ","),")")][,.(group,variable,use)
+                         ][order(group)]
+
+av<-tb[,.(c=.N),by=l2_4
+     ][,perc:=round(c/sum(c),2)*100][l2_4==1][,`:=`(variable="Cohort average")
+                        ][,use:=paste0(perc,"% (",format(c,big.mark = ","),")")][,group:="Summary"][,.(group,variable,use)]
+
+tb_out_94<-rbind(tb_out_94,av,use.names=T)
+
+tb_out_95<-melt(tb[,`:=`(perCin6=ifelse(tot_cin>=4,1,0),perSen6=ifelse(tot_sen/tot_term==1,1,0))][,.(pmr,l2,sen6,fsm6,cin6,cpp6,lac6,perFsm6,sns6,ehc6,any3,all3,any3_sns,all3_sns,perSen6,perCin6)],id.vars = c("pmr","l2")
+     )[,.(c=.N),by=.(variable,value,l2)
+       ][,perc:=round(c/sum(c),2)*100,by=.(variable,value)
+         ][value==1 & l2==1
+           ][,value:=NULL
+                     ][,group:=ifelse(variable %in% c("cin6","lac6","cpp6","perCin6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6","perSen6"),"SEN","Summary")))
+                       ][,use2:=paste0(perc,"% (",format(c,big.mark = ","),")")][,.(group,variable,use2)
+                         ][order(group)]
+
+av<-tb[,.(c=.N),by=l2
+     ][,perc:=round(c/sum(c),2)*100][l2==1][,`:=`(variable="Cohort average")
+                        ][,use2:=paste0(perc,"% (",format(c,big.mark = ","),")")][,group:="Summary"][,.(group,variable,use2)]
+
+tb_out_95<-rbind(tb_out_95,av,use.names=T)
+
+tb_out<-merge(tb_out_94,tb_out_95,by=c("group","variable"))
+
+tb_out$variable<-plyr::mapvalues(tb_out$variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns","perSen6","perCin6"),
+                                 c("Any SEN in last 6 years","Any SEN without a statement/EHC plan in the last 6 years","Any statement/EHC plan in the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans","Children persistently SEN over 6 years","Children persistently CIN over 6 years"))
+
+names(tb_out)<-c("Disadvantage type","Disadvantage indicator","% achieving 9-4 KS4 English and Maths","% achieving 9-5 KS4 English and Maths")
+
+tbF(tb_out)
+
+```
+
+Overall, children with any of these disadvantage indicators account for 72% of children not achieving levels 9-4 in KS4 English and maths in this cohort (61% of those not achieving level 5 or above).
+
+The analysis in `r tbCap("tb_av94",display="cite")` only considers one disadvantage indicator at a time, but we know from (for example) `r tbCap("tb_cinSEN_cor",display="cite")` that these characteristics often overlap: children who are FSM eligible and/or have identified SEN are also children who are more likely to have contact with children’s services and vice versa. 
+
+`r tbCap("tb_fixed1","Fixed effects portion of a regression of CIN, FSM & SEN 6 characteristics on the likelihood of a child achieving levels 9-4 in KS4 English and Maths after accounting for correlations between these disadvantage characteristics","cite")` attempts to address this by controlling for CIN 6, FSM 6 and SEN 6 status simultaneously. It shows that these gaps in attainment remain large and statistically significant after we account for correlations between CIN 6/FSM 6 and SEN 6 children though there is some reduction in the size of this gap for CIN and FSM 6 children (`r figCap("or_change","Odds ratios for children with each disadvantage indicator achieving levels 9-4 in KS4 English and maths with and without accounting for inter-correlations between these disadvantage indicators","cite")`). Children who have had an open episode with children’s services in the previous 6 years are still 50% less likely to achieve levels 9-4 in English and Maths than those who have not, even after accounting for FSM 6 and SEN 6 status. There is a similar effect for FSM 6 children, while children with identified SEN are around a fifth as likely as those without SEN to achieve this.
+
+**`r tbCap("tb_fixed1")`**
+
+```{r}
+require(broom.mixed)
+
+mod1<-readRDS("mod_noControls.rds")
+
+mod1_fixd<-as.data.table(tidy(mod1,"fixed"))
+
+tbF(
+mod1_fixd[,OR:=ifelse(!grepl("Intercept",term),round(exp(estimate),2),NA)
+     ][,term:=plyr::mapvalues(term,
+                                 c("sen61","sns61","ehc61","lac6","fsm61","perFsm6","cin61","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in last 6 years (ref = Not)","Any SEN without a statement/EHC plan in the last 6 years (ref = Not)","Any statement/EHC plan in the last 6 years (ref = Not)","Children looked after at any point in the last 6 years","Any FSM in last 6 years (ref = Not)","Children persistently FSM eligible over 6 years","Any CIN in last 6 years (ref = Not)","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+     ][,conf:=ifelse(!grepl("Intercept",term),paste0("(",round(estimate-1.96*std.error,2),", ",round(estimate+1.96*std.error,2),")"),"")][,estimate:=round(estimate,2)][!grepl("Intercept",term)][,.(Characteristic=term,`Coefficient (logit scale)`=estimate,
+                                                                                                  `95% confidence interval`=conf,`Odds ratio`=OR)]
+)
+
+
+
+
+```
+
+**`r figCap("or_change")`**
+
+```{r}
+mod_noControls<-as.data.table(rbindlist(readRDS("modList_noControls.rds")))
+
+mod_orig<-as.data.table(tidy(mod1,"fixed"))
+
+ggplot(
+
+rbind(
+mod_noControls[,.(term,or)
+               ][,group:="Univariate Odds Ratio"],
+mod_orig[,or:=exp(estimate)][,.(term,or)
+               ][,group:="Odds ratio after\naccounting for\ninter-correlations"]
+)[!term=="(Intercept)"
+  ][,term:=plyr::mapvalues(term,
+                                 c("sen61","sns61","ehc61","lac6","fsm61","perFsm6","cin61","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in\nlast 6 years (ref = Not)","Any SEN without a\nstatement/EHC plan in\nthe last 6 years (ref = Not)","Any statement/EHC plan in\nthe last 6 years (ref = Not)","Children looked after at any point in the last 6 years","Any FSM in\nlast 6 years (ref = Not)","Children persistently FSM eligible over 6 years","Any CIN in\nlast 6 years (ref = Not)","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+     ],
+aes(x=term,y=0-(1-or)*100,group=group,fill=group))+geom_col(position=position_dodge(0.9))+
+  geom_hline(yintercept=0,lty="dashed")+
+  geom_text(aes(label=paste0(round(0-(1-or)*100),"%")),position=position_dodge(0.9),hjust=-0.3)+
+  coord_flip()+scale_y_continuous(limits=c(-100,100))+theme_bw()+scale_fill_brewer(type="qual",palette=3,name="")+
+  ylab("\n% difference in odds of achieving level 9-4 KS4 English and maths\ncompared to reference level")+
+  xlab("")
+
+```
+
+`r figCap("fig_recent","Rates of children getting levels 9-4 in KS4 English and Maths amongst CIN/FSM/SEN 6 children split by whether they have their respective characteristic in the most recent time period prior to sitting KS4 exams or not","cite")` shows that within the CIN 6, FSM 6 and SEN 6 groups, children who had these characteristics in their KS4 year have lower rates of achieving 9-4 in KS4 English and Maths, compared to children who have had them previously but not in their KS4 year. This suggests a bigger effect of being contemporaneously disadvantaged as opposed to being historically disadvantaged. For example, 26% of CIN 6 children who have an open CIN episode in 2019 achieved this, compared to 40% of CIN 6 children that were not in contact with children’s services in 2019. This pattern is repeated across groups, though the difference is least amongst children who are eligible for free school meals in the last 6 years. Nevertheless, even those with historic disadvantage still have notably lower KS4 results than the cohort average.
+
+**`r figCap("fig_recent")`**
+
+```{r}
+
+rec_tb<-data.table(group=c("cin6","sns6","fsm6","ehc6"),
+                   v=c("cin19","senSum19","fsmSum19","senSum19"),
+                   lb=c("CIN in 2019","SEN in\nSummer 2019","FSM in\nSummer 2019","SEN in\nSummer 2019"))
+
+tb_recent<-rbindlist(lapply(
+   seq_len(nrow(rec_tb)),
+   function(x){
+      
+      tb_out<-tb[get(rec_tb$group[x])==1,
+         ][,.(c=.N),by=.(var=get(rec_tb$v[x]),l2_4)
+           ][,perc:=c/sum(c),by=var][l2_4==1]
+      
+      tb_out$var<-ifelse(tb_out$var==1,rec_tb$lb[x],paste0("Not ",rec_tb$lb[x]))
+      tb_out$group<-rec_tb$group[x]
+      tb_out$var<-factor(tb_out$var,levels=c(unique(rec_tb$lb),paste0("Not ",unique(rec_tb$lb))))
+      tb_out
+   }
+))
+
+a_line<-data.frame(y=64,c="Cohort average")
+
+pal<-RColorBrewer::brewer.pal(9,"Reds")
+
+ggplot(
+tb_recent[,group:=plyr::mapvalues(group,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in last 6 years","Any SEN without a\nstatement/EHC plan in the last 6 years","Any statement/EHC plan\nin the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))],
+aes(x=var,y=perc*100))+geom_col(fill="light blue",colour="grey20")+theme_bw()+
+   geom_hline(data=a_line,aes(colour=c,yintercept=y),lty="dashed")+
+   geom_text(aes(label=paste0(round(perc,2)*100,"%\n(",format(c,big.mark = ","),")")))+facet_wrap(~group,scales="free_x",nrow = 2)+
+   xlab("")+ylab("% achieving 9-4 at KS4 English and Maths\n")+
+   scale_y_continuous(limits=c(0,100))+scale_colour_manual(values=pal[5],name="")
+```
+
+Children who have been CIN 6, FSM 6 or SEN 6 over a longer time span have notably lower rates of achieving level 9-4 in Key Stage 4 English and Maths. `r figCap("fig_time","Rates of children getting levels 9-4 in KS4 English and Maths amongst CIN/FSM/SEN 6 children split by length of time with characteristic identified","cite")` demonstrates that 18% of children who were in contact with children’s services for at least 5 of the 6 years prior to Key Stage 4 achieved these grades compared to 39% of those in contact in  only 1-2 of the 6 years. This pattern is similar for both FSM and SEN 6 children.
+
+**`r figCap("fig_time")`**
+
+```{r}
+
+persist_tb<-copy(tb)[,.(pmr,tot_sen,tot_fsm,tot_cin,l2_4,tot_term)
+        ][,`:=`(senCat=ifelse(tot_sen/tot_term ==0, "Not SEN 6",
+                              ifelse(tot_sen/tot_term <= 1/3 ,"<= 1/3 of\npossible terms",
+                                     ifelse(tot_sen/tot_term <= 2/3, "1/3 - 2/3 of\npossible terms",
+                                            "2/3+ of\npossible terms" ))),
+                fsmCat=ifelse(tot_fsm/tot_term ==0, "Not FSM 6",
+                              ifelse(tot_fsm/tot_term <= 1/3 ,"<= 1/3 of\npossible terms",
+                                     ifelse(tot_fsm/tot_term <= 2/3, "1/3 - 2/3 of\npossible terms",
+                                            "2/3+ of\npossible terms"))),
+                cinCat=ifelse(tot_cin==0 | is.na(tot_cin),"Not CIN 6",
+                              ifelse(tot_cin<=2,"<= 2 years with\na CIN episode",
+                                     ifelse(tot_cin<=4,"2-4 years with\na CIN episode","5-6 years with\na CIN episode")))
+                )]
+
+av_line<-melt(tb[,.(pmr,sen6,fsm6,cin6,l2_4)
+   ],id.vars = c("pmr","l2_4")
+   )[,.(c=.N),by=.(variable,value,l2_4)
+     ][,perc:=c/sum(c)*100,by=.(variable,value)
+       ][value==1 & l2_4==1][,variable2:=toupper(variable)][,variable:=plyr::mapvalues(variable,c("sen6","fsm6","cin6"),
+                                              c("Time as SEN 6","Time as FSM 6","Time as CIN 6"))
+                             ]
+
+av_line<-rbind(av_line,data.table(variable2="Cohort average",variable=av_line$variable,perc=64),fill=T,use.names=T)
+
+ggplot(melt(persist_tb[,.(pmr,senCat,fsmCat,cinCat,l2_4)],id.vars=c("pmr","l2_4")
+     )[,.(c=.N),by=.(variable,value,l2_4)
+       ][,perc:=c/sum(c),by=.(variable,value)
+         ][l2_4==1
+           ][,value:=factor(value,
+                            levels=c("Not SEN 6","Not FSM 6","Not CIN 6",
+                                     "<= 1/3 of\npossible terms","1/3 - 2/3 of\npossible terms","2/3+ of\npossible terms","<= 2 years with\na CIN episode","2-4 years with\na CIN episode","5-6 years with\na CIN episode"))
+             ][,variable:=plyr::mapvalues(variable,c("senCat","fsmCat","cinCat"),
+                                          c("Time as SEN 6","Time as FSM 6","Time as CIN 6"))
+               ][!grepl("Not",value)],
+     aes(x=value,y=perc*100))+geom_col(fill="light blue",colour="grey20")+
+   geom_hline(data=av_line,aes(yintercept=perc,colour=variable2),lty="dashed",size=1.2)+
+   geom_text(aes(label=paste0(round(perc,2)*100,"%")),vjust=1)+facet_wrap(~variable,scales="free_x")+
+   theme_bw()+theme(axis.text.x=element_text(angle=90))+xlab("")+
+   ylab("% getting 9-4 at KS4 English and Maths\n")+
+   scale_colour_brewer(type="qual",palette=4,name="Average rates")+scale_y_continuous(limits=c(0,100))
+
+```
+
+`r figCap("fig_94_comb_gen","Proportion of children with broad combinations of CIN/FSM/SEN 6 characteristics achieving levels 9-4 in KS4 English and Maths. Limited to combinations with at least 1000 children in the cohort","cite")` demonstrates that children with multiple vulnerabilities have notably lower KS4 outcomes than the relevant group averages. For example, 19% of children who are CIN 6 and had any time on SEN support in the previous 6 years achieved levels 9-4 in English and Maths at Key Stage 4, roughly half the rate of all CIN 6 children (34%). A sizeable group is the more than 50,000 children with both FSM and SEN Support in the last 6 years, of whom only 22% achieved levels 9-4 in English and Maths. 
+
+*Note: the dot matrix below this chart indicates the broad combinations of characteristics for a specific group. For example a single dot in the FSM6 row indicates all children who are FSM6 regardless of their CIN 6 / SEN 6 status. A dot in both the CIN 6 and FSM 6 rows indicates the group who are both CIN 6 and FSM 6, regardless of their SEN 6 status*
+
+**`r figCap("fig_94_comb_gen")`**
+
+```{r}
+vars_comb<-c("cin6","fsm6","sns6","ehc6")
+
+two_way<-as.data.table(gtools::combinations(length(vars_comb),2,vars_comb))
+
+names(two_way)<-c("var1","var2")
+
+three_way<-as.data.table(gtools::combinations(length(vars_comb),3,vars_comb))
+
+names(three_way)<-c("var1","var2","var3")
+
+four_way<-as.data.table(gtools::combinations(length(vars_comb),4,vars_comb))
+
+names(four_way)<-c("var1","var2","var3","var4")
+
+two_way_out<-rbindlist(lapply(seq_len(nrow(two_way)),function(x){
+  
+  v1<-two_way$var1[x]
+  v2<-two_way$var2[x]
+  
+  tb[,.(c=.N),by=.(var1=get(v1),var2=get(v2),l2_4)
+  ][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(var1,var2)
+  ][l2_4==1 & var1==1 & var2==1
+    ][,l2_4:=NULL
+      ][,comb:=paste0(v1,"-",v2)
+        ][,.(comb,c,perc,base)]
+  
+  
+})
+)
+
+three_way_out<-rbindlist(lapply(seq_len(nrow(three_way)),function(x){
+  
+  v1<-three_way$var1[x]
+  v2<-three_way$var2[x]
+  v3<-three_way$var3[x]
+  
+  tb[,.(c=.N),by=.(var1=get(v1),var2=get(v2),var3=get(v3),l2_4)
+  ][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(var1,var2,var3)
+  ][l2_4==1 & var1==1 & var2==1 & var3==1
+  ][,l2_4:=NULL
+  ][,comb:=paste0(v1,"-",v2,"-",v3)
+  ][,.(comb,c,perc,base)]
+  
+  
+})
+)
+
+four_way_out<-rbindlist(lapply(seq_len(nrow(four_way)),function(x){
+  
+  v1<-four_way$var1[x]
+  v2<-four_way$var2[x]
+  v3<-four_way$var3[x]
+  v4<-four_way$var4[x]
+  
+  tb[,.(c=.N),by=.(var1=get(v1),var2=get(v2),var3=get(v3),var4=get(v4),l2_4)
+  ][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(var1,var2,var3,var4)
+  ][l2_4==1 & var1==1 & var2==1 & var3==1 & var4==1
+  ][,l2_4:=NULL
+  ][,comb:=paste0(v1,"-",v2,"-",v3,"-",v4)
+  ][,.(comb,c,perc,base)]
+  
+  
+})
+)
+
+one_way_out<-rbindlist(lapply(seq_len(length(vars_comb)),function(x){
+  
+  v1<-vars_comb[x]
+   
+  tb[,.(c=.N),by=.(var1=get(v1),l2_4)
+  ][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(var1)
+  ][l2_4==1 & var1==1 
+  ][,l2_4:=NULL
+  ][,comb:=paste0(v1)
+  ][,.(comb,c,perc,base)]
+  
+  
+})
+)
+
+comb_tb<-rbind(one_way_out,two_way_out,three_way_out,four_way_out
+               )[base>=1000
+                 ][,comb:=paste0("Any ",gsub("[-]","-Any ",toupper(comb)))]
+
+## LAC
+
+vars_comb<-c("cpp6","lac6","perFsm6","sns6","ehc6")
+
+two_way<-as.data.table(gtools::combinations(length(vars_comb),2,vars_comb))
+
+names(two_way)<-c("var1","var2")
+
+three_way<-as.data.table(gtools::combinations(length(vars_comb),3,vars_comb))
+
+names(three_way)<-c("var1","var2","var3")
+
+four_way<-as.data.table(gtools::combinations(length(vars_comb),4,vars_comb))
+
+names(four_way)<-c("var1","var2","var3","var4")
+
+two_way_out<-rbindlist(lapply(seq_len(nrow(two_way)),function(x){
+  
+  v1<-two_way$var1[x]
+  v2<-two_way$var2[x]
+  
+  tb[,.(c=.N),by=.(var1=get(v1),var2=get(v2),l2_4)
+  ][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(var1,var2)
+  ][l2_4==1 & var1==1 & var2==1
+  ][,l2_4:=NULL
+  ][,comb:=paste0(v1,"-",v2)
+  ][,.(comb,c,perc,base)]
+  
+  
+})
+)
+
+three_way_out<-rbindlist(lapply(seq_len(nrow(three_way)),function(x){
+  
+  v1<-three_way$var1[x]
+  v2<-three_way$var2[x]
+  v3<-three_way$var3[x]
+  
+  tb[,.(c=.N),by=.(var1=get(v1),var2=get(v2),var3=get(v3),l2_4)
+  ][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(var1,var2,var3)
+  ][l2_4==1 & var1==1 & var2==1 & var3==1
+  ][,l2_4:=NULL
+  ][,comb:=paste0(v1,"-",v2,"-",v3)
+  ][,.(comb,c,perc,base)]
+  
+  
+})
+)
+
+four_way_out<-rbindlist(lapply(seq_len(nrow(four_way)),function(x){
+  
+  v1<-four_way$var1[x]
+  v2<-four_way$var2[x]
+  v3<-four_way$var3[x]
+  v4<-four_way$var4[x]
+  
+  tb[,.(c=.N),by=.(var1=get(v1),var2=get(v2),var3=get(v3),var4=get(v4),l2_4)
+  ][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(var1,var2,var3,var4)
+  ][l2_4==1 & var1==1 & var2==1 & var3==1 & var4==1
+  ][,l2_4:=NULL
+  ][,comb:=paste0(v1,"-",v2,"-",v3,"-",v4)
+  ][,.(comb,c,perc,base)]
+  
+  
+})
+)
+
+one_way_out<-rbindlist(lapply(seq_len(length(vars_comb)),function(x){
+  
+  v1<-vars_comb[x]
+  
+  tb[,.(c=.N),by=.(var1=get(v1),l2_4)
+  ][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(var1)
+  ][l2_4==1 & var1==1 
+  ][,l2_4:=NULL
+  ][,comb:=paste0(v1)
+  ][,.(comb,c,perc,base)]
+  
+  
+})
+)
+
+comb_tb_2<-rbind(one_way_out,two_way_out,three_way_out,four_way_out
+                 )[base>=1000
+                   ][,comb:=paste0("Any ",gsub("[-]","-Any ",toupper(gsub("p","per",comb))))]
+
+comb_tb_out<-unique(rbind(comb_tb,comb_tb_2))
+
+comb_tb_out<-comb_tb_out %>% select(comb,perc,base) %>% mutate(r=percent_rank(perc)) %>%
+   tidyr::gather(key=var,val=val,perc,base) %>%
+   mutate(var=ifelse(var=="perc","% achieving grades 9-4 KS4 English and Maths","Total group size"))
+
+
+require(ggupset)
+require(ggplot2)
+
+ggplot(comb_tb_out,aes(x=reorder(comb,r),y=val))+
+   geom_col(fill="light blue",colour="grey20")+
+     axis_combmatrix(sep = "-",levels=paste0("Any ",toupper(c("sns6","ehc6","cin6","cpp6","lac6","fsm6","pFsm6"))))+
+   geom_text(aes(label=ifelse(grepl("KS4",var),paste0(round(val,2),"%"),""),hjust=ifelse(val>27,0.8,-0.3)),angle=90)+
+   xlab("")+ylab("")+ facet_wrap(~var,scales="free_y",nrow=2)+
+   theme_bw()
+   
+```
+
+
+`r figCap("fig_94_comb","Proportion of children with varying combinations of CIN/FSM/SEN 6 characteristics achieving levels 9-4 in KS4 English and Maths. Limited to combinations with at least 1000 children in the cohort","cite")` repeats the analysis but with groups defined in a slightly different way: a single dot in FSM 6 row indicates children who are FSM 6 but with no other disadvantage indicators. A dot in both the CIN 6 and FSM 6 rows indicates a group who have been CIN 6 and FSM 6 but with no other disadvantage indicators. This graph shows that around 2 in 3 children who are CIN 6 but without any other identified SEN or FSM characteristics in the previous 6 years achieved levels 9-4 at KS4. This is similar to the cohort average of 64%. Among CIN 6 children that have also had SEN but no statement or EHC plan, the pass rate is 28%. 
+
+`r figCap("fig_94_comb",display="cite")` demonstrates just under 1 in 5 children who have an EHC plan in the previous 6 years (but no other CIN/FSM/SEN 6 characteristics) achieved levels 9-4 in English and Maths, compared to 7% of those that have had an EHC plan in the last 6 years and had an open CIN episode during that time (but no other CIN/FSM/SEN 6 characteristics).
+
+**`r figCap("fig_94_comb")`**
+
+*Note: the dot matrix below this chart indicates the exact combination of characteristics for a specific group. For example a single dot in FSM 6 row indicates children who are FSM 6 with no other CIN/FSM/SEN characteristics. A dot in both the CIN 6 and FSM 6 rows indicates a group who have been CIN 6 and FSM 6 but with no other characteristics*
+
+```{r}
+
+comb_tb<-tb[,.(c=.N),by=.(cin6,lac6,cpp6,fsm6,perFsm6,sns6,ehc6,l2_4)
+][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(cin6,lac6,cpp6,fsm6,perFsm6,sns6,ehc6)
+][l2_4==1][,l2_4:=NULL][order(-perc)][base>=1000]
+
+require(dplyr)
+
+comb_tb<-as_tibble(comb_tb)
+
+comb_tb<-as_tibble(purrr::imap(comb_tb,function(x,y){
+   
+   if(!y %in% c("c","perc","base")){
+      
+      ifelse(x==1,paste0(toupper(y)),"")
+      
+   }else{
+      x
+   }
+   
+})
+) 
+
+comb_tb<-comb_tb %>%
+   mutate(comb=paste(cin6,lac6,cpp6,fsm6,perFsm6,sns6,ehc6,sep="-")) %>%
+   mutate(comb=gsub("[-]+","-",comb)) %>%
+   mutate(comb=gsub("^[-]|[-]$","",comb))
+
+comb_tb$comb<-gsub(toupper("fsm6-perFsm6"),toupper("perFsm6"),comb_tb$comb)
+
+comb_tb$comb<-gsub(toupper("cin6-cpp6"),toupper("cpp6"),comb_tb$comb)
+
+comb_tb$comb<-gsub(toupper("cin6-lac6"),toupper("lac6"),comb_tb$comb)
+
+comb_tb<-comb_tb %>% mutate(base_scale=scales::rescale(base,c(0.1,1)))
+
+comb_tb$comb<-gsub("P","PER",comb_tb$comb)
+
+require(ggupset)
+require(ggplot2)
+
+comb_tb<-comb_tb %>% select(comb,perc,base) %>% mutate(r=percent_rank(perc)) %>%
+   tidyr::gather(key=var,val=val,perc,base) %>%
+   mutate(var=ifelse(var=="perc","% achieving grades 9-4 KS4 English and Maths","Total group size")) %>%
+   filter(!comb=="")
+
+ggplot(comb_tb,aes(x=reorder(comb,r),y=val))+
+   geom_col(fill="light blue",colour="grey20")+
+     axis_combmatrix(sep = "-",levels=toupper(c("sns6","ehc6","cin6","cpp6","lac6","fsm6","perFsm6")))+
+   geom_text(aes(label=ifelse(grepl("KS4",var),paste0(round(val,2),"%"),""),hjust=ifelse(val>40,0.8,-0.3)),angle=90)+
+   xlab("")+ylab("")+ facet_wrap(~var,scales="free_y",nrow=2)+
+   theme_bw()
+   
+
+```
+
+### Local authority variation in CIN/FSM/SEN 6 children achieving levels 9-4 in English and Maths
+
+`r tbCap("tb_la_94","Variation in CIN/FSM/SEN 6 children achieving levels 9-4 in KS4 English and Maths by local authority of school attended. Limited to LAs with at least 50 children in each group","cite")` demonstrates considerable variation amongst these CIN/FSM/SEN 6 groups based on the LA of a child’s KS4 school. For example, among children who were CIN 6 or FSM 6 or SEN 6, the proportion achieving grades 9-4 in English and Maths range from 28% to 64% across LAs. Variation is largest amongst children that are FSM eligible for all possible terms in the previous 6 years (persistently FSM), ranging from 17% achieving levels 9-4 in English and Maths to 70% in the highest performing LA.
+
+**`r tbCap("tb_la_94")`**
+
+```{r}
+
+tb_out<-unique(melt(tb[!is.na(la)][,`:=`(perCin6=ifelse(tot_cin>=4,1,0),perSen6=ifelse(tot_sen/tot_term==1,1,0))][,.(pmr,la,sen6,fsm6,cin6,cpp6,lac6,perFsm6,sns6,ehc6,any3,all3,any3_sns,all3_sns,l2_4,perSen6,perCin6)],id.vars = c("pmr","la","l2_4")
+     )[,.(c=.N),by=.(la,variable,value,l2_4)
+       ][,`:=`(perc=c/sum(c),base=sum(c)),by=.(la,variable,value)
+         ][l2_4==1 & value==1][,group:=ifelse(variable %in% c("cin6","lac6","cpp6","perCin6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6","perSen6"),"SEN","Summary")))
+                       ][,variable:=plyr::mapvalues(variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns","perSen6","perCin6"),
+                                 c("Any SEN in last 6 years","Any SEN without a statement/EHC plan in the last 6 years","Any statement/EHC plan in the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans","Children persistently SEN over 6 years","Children persistently CIN over 6 years"))][base>20][,.(`Lowest LA rate (%)`=round(min(perc),2)*100,`25th percentile`=round(quantile(perc,0.25),2)*100,`Median`=round(quantile(perc,0.5),2)*100,`75th percentile`=round(quantile(perc,0.75),2)*100,`Highest LA rate (%)`=round(max(perc),2)*100,`Number of LAs included`=.N),by=.(`Disadvantage type`=group,`Disadvantage indicator`=variable)]
+     )[order(`Disadvantage type`)]
+
+tbF(tb_out)
+```
+
+```{r map2, results='asis'}
+
+if(doc=="docx"){
+
+tb_out<-unique(melt(tb[!is.na(la9)][,.(pmr,la9,sen6,fsm6,cin6,any3,l2_4)],id.vars = c("pmr","la9","l2_4")
+     )[,.(c=.N),by=.(la9,variable,value,l2_4)
+       ][,`:=`(perc=c/sum(c),base=sum(c)),by=.(la9,variable,value)
+         ][l2_4==1 & value==1][,group:=ifelse(variable %in% c("cin6","lac6","cpp6"),"CIN",
+                                      ifelse(variable %in% c("fsm6","perFsm6"),"FSM",
+                                             ifelse(variable %in% c("sen6","sns6","ehc6"),"SEN","Summary")))
+                       ][base>50][,variable:=plyr::mapvalues(variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in last 6 years","Any SEN without a statement/EHC plan in the last 6 years","Any statement/EHC plan in the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
+                                   "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+                     ]
+)
+
+
+la_map<-rgeos::gBuffer(
+   readRDS("laBase_19.rds"),
+   byid=T,width=0)
+
+
+la_map<-broom::tidy(la_map,region="ctyua19cd") %>%
+   mutate(id=as.character(id))
+
+#la_map$id[la_map$id=="E08000037"]<-"E08000020"
+#la_map$id[la_map$id=="E06000057"]<-"E06000048"
+
+la_map<-la_map %>% left_join(tb_out,by=c("id"="la9"))
+
+pal<-RColorBrewer::brewer.pal(9,"Reds")
+
+
+for(i in unique(la_map$variable[!is.na(la_map$variable)])){
+
+   map<-la_map %>% filter(variable==i) %>%
+   ggplot(aes(x=long,y=lat,group=group.x,fill=perc*100))+
+         geom_polygon(colour="grey20")+
+         scale_fill_gradient(low=pal[1],high=pal[9],name=paste0("% ",i,"\nachieving 9-4 in\nKS4 English and Maths"))+
+         theme_minimal()+theme(panel.grid=element_blank(),
+                               axis.ticks = element_blank(),
+                               axis.text=element_blank(),
+                               axis.title = element_blank())
+   
+   cat("**")    
+     cat(figCap(paste0("tb94_",i),
+           paste0("Map of LA variation in percentage of children with ",gsub("Any","any",i)," achieving levels 9-4 in KS4 English and Maths"))
+     )
+  cat("**\n")
+
+cat("\n")
+   
+print(map)
+
+
+cat("\n\n")
+}
+}else{
+
+
+
+tb_map<-unique(melt(tb[!is.na(la9)][,.(pmr,la9,sen6,sns6,ehc6,fsm6,perFsm6,cin6,cpp6,lac6,any3,l2_4)],id.vars = c("pmr","la9","l2_4")
+     )[,.(c=.N),by=.(la9,variable,value,l2_4)
+       ][,`:=`(perc=c/sum(c),base=sum(c)),by=.(la9,variable,value)
+         ][value==1 & l2_4==1][base>20]
+)
+
+leaf_poly<-readRDS("laBase_19.rds")
+
+#tb_map$la9[tb_map$la9=="E08000037"]<-"E08000020"
+#tb_map$la9[tb_map$la9=="E06000057"]<-"E06000048"
+tb_count<-dcast(tb_map[,.(la9,variable,c)],la9~variable,value.var="c")
+
+names(tb_count)[2:length(names(tb_count))]<-paste0(names(tb_count)[2:length(names(tb_count))],"_count")
+
+tb_map<-dcast(tb_map[,.(la9,variable,perc)],la9~variable,value.var="perc")
+
+for(i in c("sen6","fsm6","cin6","any3","sns6","ehc6","cpp6","lac6","perFsm6")){
+  
+  vnm<-paste0(i,"_scale")
+  
+  tb_map<-tb_map[,(vnm):=scales::rescale(get(i),c(0,1))]
+  
+}
+
+require(leaflet)
+
+pal2<-colorNumeric("Reds",c(0,1))
+
+leaf_poly@data<-merge(leaf_poly@data,tb_map,by.x="ctyua19cd",by.y="la9",all.x=T)
+
+leaf_poly@data<-merge(leaf_poly@data,tb_count,by.x="ctyua19cd",by.y="la9",all.x=T)
+
+labels<-lapply(c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6"),function(x){
+  
+  lb<-plyr::mapvalues(x,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("have any SEN in last 6 years","have any SEN without a statement/EHC plan in the last 6 years","have any statement/EHC plan in the last 6 years","Children looked after at have any point in the last 6 years","have any FSM in last 6 years","are persistently FSM eligible over 6 years","have any CIN in last 6 years","have any Child Protection Plan in the last 6 years",
+                                   "have any CIN/SEN/FSM in last 6 years","have any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+  
+  paste0("LA: ",leaf_poly@data$ctyua19nm,"</br>Measure: Children in LA's</br>KS4 cohort who</br>",lb,"</br>achieving levels 9-4 KS4 English and Maths</br>% of LA cohort: ",round(leaf_poly@data[,x],2)*100,"%,<br/>Count: ",leaf_poly@data[,paste0(x,"_count")])
+  
+  
+  
+  
+})
+
+for(i in seq_len(length(labels))){
+  
+  labels[[i]]<-lapply(labels[[i]],htmltools::HTML)
+  
+}
+
+names(labels)<-c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6")
+
+cat("\n\n")
+
+cat("**")
+cat(figCap("map_laDist94","Proportion of KS4 cohort in LA with each CIN/FSM/SEN 6 characteristic achieving level 9-4 in KS4 English and maths"))
+
+cat("**\n\n")
+
+leaflet(data=leaf_poly, options = leafletOptions(background="#FFF"),
+        elementId = "la_map_2") %>%
+  addProviderTiles(providers$CartoDB) %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(sen6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["sen6"]],group="SEN 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(sns6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["sns6"]],group="SEN support 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(ehc6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["ehc6"]],group="EHC 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(fsm6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["fsm6"]],group="FSM 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(perFsm6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["perFsm6"]],group="Persistent FSM")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(cin6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["cin6"]],group="CIN 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(cpp6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["cpp6"]],group="CPP 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(lac6_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["lac6"]],group="LAC 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(any3_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["any3"]],group="Any CIN/SEN/FSM 6")  %>%
+  addLayersControl(
+    baseGroups = c("SEN 6","SEN support 6","EHC 6","FSM 6","Persistent FSM","CIN 6","CPP 6","LAC 6","Any CIN/SEN/FSM 6"),options = layersControlOptions(collapsed=F)) %>%
+  addLegend("topleft", pal = pal2, values = seq(0,1),bins=5,
+            labFormat = function(type, cuts, p) { 
+              n = length(cuts) 
+              cuts[n] = "Highest rate" 
+              for (i in 2:(n-1)){cuts[i] = " "} 
+              cuts[1] = "Lowest rate" 
+              paste0(cuts[-n], cuts[-1])},
+            title = "% of children in</br>KS4 cohort</br>in LA achieving</br>level 9-4 in KS4</br>English and maths",
+            na.label = "Missing/excluded",
+            opacity = 0.7,className = "la_map_legend_2"
+  )
+}
+
+```
+
+
+```{r, results='asis',echo=F,warning=F}
+if(!doc=="docx"){
+
+tb_map<-as.data.frame(tb_map)
+
+minVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3"),function(x){
+     
+     paste0(round(min(tb_map[,x],na.rm=T)*100,1),"%")
+    
+   }) 
+
+maxVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3"),function(x){
+     
+     paste0(round(max(tb_map[,x],na.rm=T)*100,1),"%")
+    
+   }) 
+
+
+minVals<-jsonlite::toJSON(minVals,"values")
+
+maxVals<-jsonlite::toJSON(maxVals,"values")
+
+cat(paste0('<script>
+  
+  window.addEventListener("load", function () {
+    var eles = document.getElementById("la_map_2");
+    
+    var layer_select = eles.querySelector(".leaflet-control-layers")
+    
+    layer_select.insertAdjacentHTML("afterbegin","<span style=',"'","margin-bottom:3px;font-weight:bold","'",'>Select measure to view:</span>")
+
+
+
+  var maxArr = ',maxVals,';
+
+  var minArr = ',minVals,';
+
+  var legendEntries = eles.getElementsByClassName("leaflet-control-layers-selector")
+
+  for (var i=0; i < legendEntries.length; i++){
+
+  legendEntries[i].setAttribute("minval_map",minArr[i])
+
+  legendEntries[i].setAttribute("maxval_map",maxArr[i])
+
+  }
+
+var legend_1 = eles.querySelector(".la_map_legend_2")
+
+  var legEntries_1 = legend_1.getElementsByTagName("text")
+
+  legEntries_1[0].innerHTML = minArr[0]
+
+  legEntries_1[0].setAttribute("dx",50)
+
+  legEntries_1[legEntries_1.length - 1].innerHTML = maxArr[0]
+
+  legEntries_1[legEntries_1.length - 1].setAttribute("dx",50)
+
+  var legendTitle_1 = legend_1.getElementsByTagName("strong")
+
+
+
+f3 = function(){
+
+  var minVal_var = this.getAttribute("minval_map")
+
+  var maxVal_var = this.getAttribute("maxval_map")
+
+ 
+     
+      var legend = eles.querySelector(".la_map_legend_2")
+    
+      var legEntries = legend.getElementsByTagName("text")
+    
+      legEntries[0].innerHTML = minVal_var
+    
+      legEntries[0].setAttribute("dx",50)
+    
+      legEntries[legEntries.length - 1].innerHTML = maxVal_var
+    
+      legEntries[legEntries.length - 1].setAttribute("dx",50)
+
+
+  }
+
+  for (var i=0; i < legendEntries.length; i++){
+
+  legendEntries[i].addEventListener("click",f3)
+
+  }
+    
+})
+
+  
+  
+
+  </script>'
+  ))
+
+}
+```
+
+
+`r figCap("fig_regdist","Regional variation in proportion of children in an LA achieving levels 9-4 at KS4 English and Maths by CIN/SEN/FSM 6 characteristics. Note: limited to LAs with at least 50 children with the relevant characteristic","cite")` demonstrates that across most groups of children with varying CIN/SEN/FSM 6 characteristics the proportion achieving levels 9-4 is notably greater in London than in other regions. The exception appears to be children who have had a statement or EHC plan within the last 6 years, where the regional differences are smaller.
+
+**`r figCap("fig_regdist")`**
+
+*Note: the dots outside the box and whiskers represent outliers. The median CCG is shown by the vertical line in the middle of the box. The upper and lower quartiles are the ends of the box. Horizontal lines represent 1.5 times the interquartile range of each region*
+
+```{r, fig.height=10,fig.width=10}
+la_look2<-fread("region_lookup21102020.csv")[,old_lacode:=as.character(old_lacode)]
+
+la_clust<-merge(melt(tb[,.(pmr,la,sen6,fsm6,cin6,cpp6,lac6,perFsm6,sns6,ehc6,any3,all3,any3_sns,all3_sns,l2_4)],id.vars = c("pmr","la","l2_4")
+     )[,.(c=.N),by=.(la,variable,value,l2_4)
+       ][,perc:=c/sum(c),by=.(la,variable,value)
+         ][,base:=sum(c),by=.(la,variable,value)][value==1 & l2_4==1 & base>=50][,la:=as.character(la)],la_look2,by.x="la",by.y="old_lacode")[,variable:=plyr::mapvalues(variable,
+                                 c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
+                                 c("Any SEN in\nlast 6 years","Any SEN without\na statement/EHC plan\nin the last 6 years","Any statement/EHC plan\nin the last 6 years","Children looked\nafter at any point\nin the last 6 years","Any FSM in\nlast 6 years","Children persistently FSM\neligible over 6 years","Any CIN in\nlast 6 years","Any Child Protection Plan\nin the last 6 years",
+                                   "Any CIN/SEN/FSM in\nlast 6 years","Any CIN/SEN/FSM in\nlast 6 years\nexc. EHC plans","CIN 6 & FSM 6\n& SEN 6 in\nlast 6 years","CIN 6 & FSM 6\n& SEN 6 in last 6 years\nexc. EHC plans"))
+                     ]
+
+ggplot(la_clust,aes(x=region,y=perc*100))+geom_boxplot()+facet_wrap(~variable)+coord_flip()+theme_bw()+xlab("Region\n")+ylab("\n% of group in LA achieving level 9-4 in\nKS4 English and Maths")
+
+```
+
+
+## Conclusions
+
+Overall this analysis echoes previous work suggesting that large numbers of children have these identified vulnerabilities and that (on average) they have notably worse outcomes at Key Stage 4. However, the key addition is that it also demonstrates there is considerable variation within these groups in children’s Key Stage 4 results based on their combinations of these vulnerabilities.
+
+* Children with any of these CIN/FSM/SEN 6 – that is, CIN 6 or FSM 6 or SEN 6 – characteristics represent a substantial proportion of this cohort, accounting for just under 1 in 2 children sitting GCSE exams in 2019.
+
+* They have notably lower rates of achieving levels 9-4 in KS4 English and Maths. Around 4 in 10 of this group achieve at least a level 4 in these subjects compared to a cohort average of just over 6 in 10. Around 1 in 4 achieve at least a level 5, compared to 4 in 10 in the cohort overall.
+
+* Overall, children with any of these disadvantage indicators account for 72% of children not achieving levels 9-4 in KS4 English and maths in this cohort (61% of those not achieving level 5 or above).
+
+* Rates of achieving at least level 4 in these subjects are lowest among those that have had an EHC plan in the last 6 years (12%), and among those that have been looked after at some point in the last 6 years (23%).
+
+* The specific combination of children’s CIN/FSM/SEN 6 status makes substantial differences to their performance at KS4: Nearly two thirds of children that are CIN 6 only – i.e. CIN 6 but not FSM 6 and not SEN 6 – achieve at least a level 4 in English and Maths. This is similar to the average rate for the cohort as a whole (64%). This compares to 34% of CIN 6 children as a whole.
+
+* Children who have had these disadvantage characteristics identified for longer have worse outcomes at Key Stage 4. However, even those with vulnerabilities identified for smaller proportions of time in the last 6 years have notably lower rates than the cohort average.
+
+* There is substantial variation by local authority in rates of these children achieving at least a level 4 in English and Maths. 
+   + Rates of FSM 6 children achieving this range from 28% to 68% across local authorities.
+   + Rates of CIN 6 children achieving this range from 20% to 54%. 
+   + Rates for children with SEN support but no EHC plan in the last 6 years range from 17% to 56%. 
+
+Taken together these findings suggest that these broad groupings of CIN, SEN and FSM 6 belie considerable variation in terms of KS4 outcomes. This suggests effective interventions to address the broad levels of disadvantage faced by these groups may need careful targeting given these levels of variation. 
+
+However, even within the combinations examined here, this analysis is limited in the different types of need faced by children it explores (particularly around primary SEN types and/or disability). Useful further avenues for research would be to further explore the drivers of these within group differences, by accounting for a greater variety of needs within these overarching groups. Another particularly useful angle would be to explore drivers of the variation locally for these children.

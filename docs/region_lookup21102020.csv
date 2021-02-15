@@ -1,0 +1,153 @@
+lacode,old_lacode,laname,region
+E09000002,301,Barking and Dagenham,London
+E09000003,302,Barnet,London
+E08000016,370,Barnsley,Yorkshire and the Humber
+E06000022,800,Bath and North East Somerset,South West
+E06000055,822,Bedford Borough,East of England
+E09000004,303,Bexley,London
+E08000025,330,Birmingham,West Midlands
+E06000008,889,Blackburn with Darwen,North West
+E06000009,890,Blackpool,North West
+E08000001,350,Bolton,North West
+E06000028,837,Bournemouth,South West
+E06000036,867,Bracknell Forest,South East
+E08000032,380,Bradford,Yorkshire and the Humber
+E09000005,304,Brent,London
+E06000043,846,Brighton and Hove,South East
+E06000023,801,"Bristol, City of",South West
+E09000006,305,Bromley,London
+E10000002,825,Buckinghamshire,South East
+E08000002,351,Bury,North West
+E08000033,381,Calderdale,Yorkshire and the Humber
+E10000003,873,Cambridgeshire,East of England
+E09000007,202,Camden,London
+E06000056,823,Central Bedfordshire,East of England
+E06000049,895,Cheshire East,North West
+E06000050,896,Cheshire West & Chester,North West
+E09000001,201,City of London,London
+E06000052,908,Cornwall,South West
+E08000026,331,Coventry,West Midlands
+E09000008,306,Croydon,London
+E10000006,909,Cumbria,North West
+E06000005,841,Darlington,North East
+E06000015,831,Derby,East Midlands
+E10000007,830,Derbyshire,East Midlands
+E10000008,878,Devon,South West
+E08000017,371,Doncaster,Yorkshire and the Humber
+E10000009,835,Dorset,South West
+E08000027,332,Dudley,West Midlands
+E06000047,840,Durham,North East
+E09000009,307,Ealing,London
+E06000011,811,East Riding of Yorkshire,Yorkshire and the Humber
+E10000011,845,East Sussex,South East
+E09000010,308,Enfield,London
+E10000012,881,Essex,East of England
+E08000020,390,Gateshead,North East
+E10000013,916,Gloucestershire,South West
+E09000011,203,Greenwich,London
+E09000012,204,Hackney,London
+E06000006,876,Halton,North West
+E09000013,205,Hammersmith and Fulham,London
+E10000014,850,Hampshire,South East
+E09000014,309,Haringey,London
+E09000015,310,Harrow,London
+E06000001,805,Hartlepool,North East
+E09000016,311,Havering,London
+E06000019,884,Herefordshire,West Midlands
+E10000015,919,Hertfordshire,East of England
+E09000017,312,Hillingdon,London
+E09000018,313,Hounslow,London
+E06000046,921,Isle of Wight,South East
+E06000053,420,Isles Of Scilly,South West
+E09000019,206,Islington,London
+E09000020,207,Kensington and Chelsea,London
+E10000016,886,Kent,South East
+E06000010,810,"Kingston upon Hull, City of",Yorkshire and the Humber
+E09000021,314,Kingston upon Thames,London
+E08000034,382,Kirklees,Yorkshire and the Humber
+E08000011,340,Knowsley,North West
+E09000022,208,Lambeth,London
+E10000017,888,Lancashire,North West
+E08000035,383,Leeds,Yorkshire and the Humber
+E06000016,856,Leicester,East Midlands
+E10000018,855,Leicestershire,East Midlands
+E09000023,209,Lewisham,London
+E10000019,925,Lincolnshire,East Midlands
+E08000012,341,Liverpool,North West
+E06000032,821,Luton,East of England
+E08000003,352,Manchester,North West
+E06000035,887,Medway,South East
+E09000024,315,Merton,London
+E06000002,806,Middlesbrough,North East
+E06000042,826,Milton Keynes,South East
+E08000021,391,Newcastle upon Tyne,North East
+E09000025,316,Newham,London
+E10000020,926,Norfolk,East of England
+E06000012,812,North East Lincolnshire,Yorkshire and the Humber
+E06000013,813,North Lincolnshire,Yorkshire and the Humber
+E06000024,802,North Somerset,South West
+E08000022,392,North Tyneside,North East
+E10000023,815,North Yorkshire,Yorkshire and the Humber
+E10000021,928,Northamptonshire,East Midlands
+E06000048,929,Northumberland,North East
+E06000018,892,Nottingham,East Midlands
+E10000024,891,Nottinghamshire,East Midlands
+E08000004,353,Oldham,North West
+E10000025,931,Oxfordshire,South East
+E06000031,874,Peterborough,East of England
+E06000026,879,Plymouth,South West
+E06000029,836,Poole,South West
+E06000044,851,Portsmouth,South East
+E06000038,870,Reading,South East
+E09000026,317,Redbridge,London
+E06000003,807,Redcar and Cleveland,North East
+E09000027,318,Richmond upon Thames,London
+E08000005,354,Rochdale,North West
+E08000018,372,Rotherham,Yorkshire and the Humber
+E06000017,857,Rutland,East Midlands
+E08000006,355,Salford,North West
+E08000028,333,Sandwell,West Midlands
+E08000014,343,Sefton,North West
+E08000019,373,Sheffield,Yorkshire and the Humber
+E06000051,893,Shropshire,West Midlands
+E06000039,871,Slough,South East
+E08000029,334,Solihull,West Midlands
+E10000027,933,Somerset,South West
+E06000025,803,South Gloucestershire,South West
+E08000023,393,South Tyneside,North East
+E06000045,852,Southampton,South East
+E06000033,882,Southend-on-Sea,East of England
+E09000028,210,Southwark,London
+E08000013,342,St Helens,North West
+E10000028,860,Staffordshire,West Midlands
+E08000007,356,Stockport,North West
+E06000004,808,Stockton-on-Tees,North East
+E06000021,861,Stoke-on-Trent,West Midlands
+E10000029,935,Suffolk,East of England
+E08000024,394,Sunderland,North East
+E10000030,936,Surrey,South East
+E09000029,319,Sutton,London
+E06000030,866,Swindon,South West
+E08000008,357,Tameside,North West
+E06000020,894,Telford and Wrekin,West Midlands
+E06000034,883,Thurrock,East of England
+E06000027,880,Torbay,South West
+E09000030,211,Tower Hamlets,London
+E08000009,358,Trafford,North West
+E08000036,384,Wakefield,Yorkshire and the Humber
+E08000030,335,Walsall,West Midlands
+E09000031,320,Waltham Forest,London
+E09000032,212,Wandsworth,London
+E06000007,877,Warrington,North West
+E10000031,937,Warwickshire,West Midlands
+E06000037,869,West Berkshire,South East
+E10000032,938,West Sussex,South East
+E09000033,213,Westminster,London
+E08000010,359,Wigan,North West
+E06000054,865,Wiltshire,South West
+E06000040,868,Windsor and Maidenhead,South East
+E08000015,344,Wirral,North West
+E06000041,872,Wokingham,South East
+E08000031,336,Wolverhampton,West Midlands
+E10000034,885,Worcestershire,West Midlands
+E06000014,816,York,Yorkshire and the Humber
