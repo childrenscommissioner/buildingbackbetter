@@ -208,29 +208,41 @@ tb<-merge(tb,unique(lsoa_look[,.(LSOA11CD,la_home_code=UTLA19CD,la_home=UTLA19NM
 
 ```
 
+```{r, results='asis'}
+
+shiny::div(id="dwnload_link",style="width: 100%; display:inline-block;",
+shiny::a(href="Technical report - Key Stage 4 outcomes for different groupings of disadvantaged and vulnerable children.pdf", download="CCO building back better technical report",style="float: right;","Download text version of this report")
+)
+
+```
+
+
+
 ## Introduction
 
-The Children’s Commissioner’s Office’s programme of work childhood vulnerability shows aims to shine a light on the children growing up with additional needs or issues that may need more help to succeed. These include educational disadvantage, severe poverty, special educational needs or disabilities, risks of abuse and neglect, mental health needs, youth violence and exploitation, homelessness, and other issues. Our work on this area has attempted to show many children suffer from each of these issues, and how many vulnerable children there may be in total.
+The Children’s Commissioner’s Office’s programme of data work on childhood vulnerability aims to shine a light on the children growing up with additional needs or issues that may need more help to succeed. These include educational disadvantage, severe poverty, special educational needs or disabilities, risks of abuse and neglect, mental health needs, youth violence and exploitation, homelessness, and other issues. Our work on this area has set out to show the scale and nature of childhood vulnerability and how they interact.
 
-Many children grow up facing at least one of these issues. In fact, we have estimated that – even before the pandemic – 2.3 million children in England were growing up in a family vulnerable family with some kind of complex need^[https://www.childrenscommissioner.gov.uk/report/childhood-vulnerability-in-england-2019/].  Even more concerning are the children who face multiple overlapping vulnerabilities – risks that compound each other and collectively chip away at children’s ability to thrive. Unfortunately, it is these kinds of more severe vulnerabilities where data and insights are lacking the most. 
+Many children grow up facing at least one vulnerability: even before the pandemic – 2.3 million children in England were growing up in a family vulnerable family with a serious and complex need^[https://www.childrenscommissioner.gov.uk/report/childhood-vulnerability-in-england-2019/].  Even more concerning are the children who face multiple overlapping vulnerabilities – risks that compound each other and collectively chip away at children’s ability to thrive. Unfortunately, it is these kinds of more severe vulnerabilities where data and insights are lacking the most.
 
-Our work on vulnerability has made some valuable inroads, by showing the 100,000 children living in a household affected by all of the ‘toxic trio’ issues – domestic abuse, parental mental health issues and parental drug and alcohol dependency^[https://www.childrenscommissioner.gov.uk/wp-content/uploads/2018/07/Vulnerability-Technical-Report-2-Estimating-the-prevalence-of-the-toxic-trio.pdf]  – or the 140,000 teenagers with two or more high needs (including dropping out of school, special educational needs, or having a social worker)^[https://www.childrenscommissioner.gov.uk/report/teenagers-falling-through-the-gaps/].  Despite this, it is still too difficult to assess the numbers, experiences and outcomes of the children that we should be most worried – those living with multiple and persistent vulnerabilities.
+Our work on vulnerability has made valuable inroads, by showing the 100,000 children living in a household affected by all of the so called ‘toxic trio’ issues – domestic abuse, parental mental health issues and parental drug and alcohol dependency^[https://www.childrenscommissioner.gov.uk/wp-content/uploads/2018/07/Vulnerability-Technical-Report-2-Estimating-the-prevalence-of-the-toxic-trio.pdf]  – or the 140,000 teenagers with two or more high needs (including dropping out of school, special educational needs, or having a social worker)^[https://www.childrenscommissioner.gov.uk/report/teenagers-falling-through-the-gaps/].  Despite this, it is still too difficult to assess the numbers, experiences and outcomes of the children that we should be most worried – those living with multiple and persistent vulnerabilities.
 
-One area where we can make more progress is in education. It is well known that disadvantaged children tend, on average, to have lower levels of educational attainment. Children eligible for free school meals (FSM) are only around half likely as likely as the rest of the cohort to achieve a strong pass in English and Maths GCSE. Furthermore, children with identified special educational needs (SEN) are only a quarter as likely to achieve this benchmark, compared to children without SEN^[https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/863815/2019_KS4_revised_text.pdf].  And the Department for Education’s Child in Need (CIN) review^[https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/809108/CIN_review_final_analysis_publication.pdf]  indicates that children who have ever needed a social worker are around a third as likely to achieve this, compared to children who have not needed a social worker. More recent evidence from the University of Bristol shows that within the group of children too often we consider one vulnerability at a particular point in time. These separate pieces of evidence are powerful and important on their own, but what has too often been missed is that in many cases they could be examining the same child from three different lenses. In other words, these groups often overlap – and most vulnerable children will belong to more than one group.
+One area where we can make more progress is in understanding the impact of vulnerability on education. It is well known that disadvantaged children tend, on average, to have lower levels of educational attainment. Children eligible for free school meals (FSM) are only around half likely as likely as the rest of the cohort to achieve a strong pass in English and Maths GCSE. Furthermore, children with identified special educational needs (SEN) are only a quarter as likely to achieve this benchmark, compared to children without SEN.^[https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/863815/2019_KS4_revised_text.pdf].  The Department for Education’s Child in Need (CIN) review^[https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/809108/CIN_review_final_analysis_publication.pdf]  indicates that children who have ever needed a social worker are around a half as likely to achieve this, compared to other children. More recent evidence from the Bristol and Oxford Universities shows that within the group of children too often we consider one vulnerability at a particular point in time. These separate pieces of evidence are powerful and important on their own, but what has too often been missed is that in many cases they could be examining the same child from three different lenses. In other words, these groups often overlap – and most vulnerable children will belong to more than one group.
 
 Data analysed for this report, focusing on the cohort of children taking GCSE exams in 2019, shows the degree of overlap. Of the children who have needed a social worker in the past six years, 4 in 5 also had another disadvantage (FSM or SEN) in the past six years. Of the children who had been FSM in the past six years, more than half also been CIN or had SEN over that period as well. And nearly half of the children who had had SEN over the past six years and had also been CIN or FSM over that period. As these disadvantages compound, so too does the additional support that may needed. Some children – around 1 in 25 of the Year 11 cohort – had all three of these characteristics.
 
-This report also shows the extent to which these issues persist over time. It finds that less than half (44%) of the pupils who have had a social worker have only done so for one year; the rest have had a social worker for multiple years. Among those who have had SEN, only around three quarters have done so for more than a year, and among those who have had FSM this is more than four-fifths. 
+This report also shows the extent to which these issues persist over time. It finds that less than half (44%) of the pupils who have had a social worker have only done so for one year; the rest have had a social worker for multiple years. Among those who have had SEN, only around three quarters have done so for more than a year, and among those who have had FSM this is more than four-fifths.
 
 As well as looking at the intersections of these different groups, this analysis also looks within these groups to see how education outcomes vary amongst children with needs identified at different thresholds – for example, children in care or children with an Education, Care and Health Plan (EHCP).
 
-This report finds only around 2 in 5 of the broader group of children – those who have been CIN or FSM or SEN  – achieved a pass in GCSE English and Maths in 2019. But children who only have one vulnerability will still do well on average. For example, nearly two thirds of children who only had a social worker – and not FSM or SEN – achieved these passes. The same is true of children who only had FSM. These rates are actually in line with the average pass rate across all pupils.
+This report finds only around 2 in 5 of the broader group of children – those who have been CIN, FSM or SEN – achieved a pass in GCSE English and Maths in 2019. But children who only have one vulnerability will still do well on average. For example, nearly two thirds of children who only had a social worker – and not FSM or SEN – achieved these passes. The same is true of children who only had FSM. These rates are actually in line with the average pass rate across all pupils.
 
-But as vulnerabilities coincide and become more severe or persistent, outcomes can rapidly deteriorate. Of the children who have had a social worker and been on FSM and had SEN, only 13% passed GCSE English and Maths. The rate falls to as low as 4% if the child was continually on FSM throughout school and also had an EHCP. 
+But as vulnerabilities coincide and become more severe or persistent, outcomes can rapidly deteriorate. Of the children who have had a social worker and been on FSM and had SEN, only 13% passed GCSE English and Maths. The rate falls to as low as 4% if the child was continually on FSM throughout school and also had an EHCP.
 
-The proportions of children who have these various types and levels of need is therefore a crucial way of understanding the overall level and severity of need among children. We should that these proportions can vary considerably across the country: in some local areas, nearly 3 in 4 pupils have had CIN or FSM or SEN in the past six years. But there is also wide variation in the outcomes that these children achieve: in some areas more half of these pupils managed to pass English and Maths GCSE, whereas in other areas less than a third of this group managed to do so.
+The proportions of children who have these various types and levels of need is therefore a crucial way of understanding the overall of educational vulnerability. Overall, these groups collectively account for the clear majority of children failing to achieve basic qualifications in England. Of all the children not achieving levels 9-4 in GCSE English and Maths, nearly three-quarters – 72% – have been CIN, FSM or SEN in the last six years.
 
-With the data available, it is difficult to explain what is driving this local variation, even after taking into account other local factors including deprivation and rates of access for SEN and CIN support. We still need to know more about what it is that enables some of these highly vulnerable children to succeed – either because of the area they live in, or because of personal or family factors that enable them to thrive regardless. What is clear, however, is that re-examining the data on disadvantaged children in this way helps us to see which groups – on average – are the most left-behind and need the most help.
+We also need to recognise that these rates vary considerably across the country: in some local areas, nearly 3 in 4 pupils have been CIN, FSM or SEN in the past six years. But there is also wide variation in the outcomes that these children achieve: in some areas more half of these pupils managed to pass English and Maths GCSE, whereas in other areas less than a third of this group managed to do so.
+
+With the data available, it is difficult to explain what is driving this local variation, even after taking into account other local factors including deprivation and rates of access for SEN and CIN support. We still need to know more about what it is that enables some of these highly vulnerable children to succeed – either because of the area they live in, or because of personal or family factors that enable them to thrive regardless. What is clear, however, is that re-examining the data on disadvantaged children in this way helps us to see which groups – on average – are the most left-behind and need the most help
 
 
 ## Executive summary
@@ -241,7 +253,7 @@ This analysis examines the Key Stage 4 (KS4) results for the following groupings
 * Those who have been eligible for free school meals in the last 6 years (FSM 6)
 * Those who have had any identified special educational need in the previous 6 years (SEN 6).
 
-We examine Key Stage 4 results for children at the intersections of these groups to examine what (if any) additional disadvantage children face when they have multiple identified vulnerabilities.  We also look within these groups and examine how KS4 results vary amongst children with needs identified at higher thresholds. We investigate this amongst the most recent cohort of children to take GCSEs that were not affected by the COVID-19 pandemic - those who sat their GCSEs in summer 2019. The main outcome measure in this analysis is whether these children achieved Levels 9-4 in English and Maths GCSE.
+We examine Key Stage 4 results for children at the intersections of these groups to examine what (if any) additional disadvantage children face when they have multiple identified vulnerabilities. We also look within these groups and examine how KS4 results vary amongst children with needs identified at higher thresholds. We investigate this amongst the most recent cohort of children to take GCSEs that were not affected by the COVID-19 pandemic - those who sat their GCSEs in summer 2019. The main outcome measure in this analysis is whether these children achieved Levels 9-4 in English and Maths GCSE.
 
 Our key questions to answer are:
 
@@ -251,7 +263,7 @@ Our key questions to answer are:
 
 * How do these results vary by local authority for children with combinations of these characteristics?
 
-Overall this analysis echos previous work suggesting that large numbers of children have these identified vulnerabilities and that (on average) they have notably worse outcomes at Key Stage 4. However, the key addition is that it also demonstrates there is considerable variation within these groups in children's Key Stage 4 results based on their combinations of these vulnerabilities.
+Overall this analysis echoes previous work suggesting that large numbers of children have these identified vulnerabilities and that (on average) they have notably worse outcomes at Key Stage 4. However, the key addition is that it also demonstrates there is considerable variation within these groups in children's Key Stage 4 results based on their combinations of these vulnerabilities.
 
 * Children with any of these CIN/FSM/SEN 6 – that is, CIN 6 or FSM 6 or SEN 6 – characteristics represent a substantial proportion of this cohort, accounting for just under 1 in 2 children sitting GCSE exams in 2019.
 
@@ -266,25 +278,25 @@ Overall this analysis echos previous work suggesting that large numbers of child
 * Children with an EHC plan in the last 6 years combination with other CIN/SEN/FSM 6 characteristics have the lowest rates of achieving at least a level 4 in English and Maths.
 
 * There is substantial variation by local authority in rates of these children achieving at least a level 4 in English and Maths.
-–	Rates of FSM 6 children achieving this range from 28% to 68% across local authorities.
-–	Rates of CIN 6 children achieving this range from 20% to 54%.
-–	Rates for children with SEN support but no EHC plan in the last 6 years range from 17% to 56%. 
+   + Rates of FSM 6 children achieving this range from 28% to 68% across local authorities.
+   + Rates of CIN 6 children achieving this range from 20% to 54%.
+   + Rates for children with SEN support but no EHC plan in the last 6 years range from 17% to 56%. 
 
 
 ## Definition of cohort
 
 We base our analysis on the cohort of children who took Key Stage 4 (KS4) exams in 2019 and can be matched in the Summer term school census 2019 (n = 548,610). Note that since the School Census primarily covers state-funded schools only, the resulting matched cohort largely excludes who were not enrolled in a state school^[We also exclude from the sample any children in the Key Stage 4 file not included in national KS4 statistics for 2019. This is to better align with published national statistics though this may exclude some particularly vulnerable children from our results. We also exclude those where their UPNs are associated with more than one pupil matching reference and a very small number that cannot be matched between the looked after children and CIN censuses.].
 
-We then link this base cohort to every termly pupil level school census over the six year period from 2013/14 to 2018/19 (via the anonymised pupil matching reference) in order to add information on each pupil’s SEN and FSM status in each term during this period. We also link in the children in need (CIN) census datasets over the same time period to add information on whether each pupil had an open CIN episode with children’s social care.
+We then link this base cohort to every termly pupil level school census over the six year period from 2013/14 to 2018/19 (via the anonymised pupil matching reference) in order to add information on each pupil’s SEN and FSM status in each term during this period^[We put no lower limit on the number of terms children have to be matched in the school census to avoid excluding children with high levels of school instability and recent migrants from our analysis. However this adds a limitation to our measures of persistent FSM and persistent SEN as this potentially means that they would only need to be (for example) FSM eligible for a very small amount of time to be counted as persistently FSM. For context, less than 0.5% of our cohort have 3 or fewer terms matched and 1% have 6 terms or fewer]. We also link in the children in need (CIN) census datasets over the same time period to add information on whether each pupil had an open CIN episode with children’s social care.
  
 
-We then link this base cohort to the termly pupil level school census (hereafter the NPD) and annual children in need census datasets from 2014-2019 (inclusive) via their anonymised pupil matching reference and UPN respectively. This creates a longitudinal record of this cohort's number of terms with identified SEN and FSM eligibility as well as years when they have an open CIN episode  with children's services. 
+We then link this base cohort to the termly pupil level school census (hereafter the NPD) and annual children in need census datasets from 2014-2019 (inclusive) via their anonymised pupil matching reference and UPN respectively^[A limitation of this approach is that the time periods covered by the CIN and pupil censuses do not align perfectly as one is based on financial years (April to March) and the other is based on academic years (September to August)]. This creates a longitudinal record of this cohort's number of terms with identified SEN and FSM eligibility as well as years when they have an open CIN episode  with children's services. 
 
 ## Rates of disadvantage
 
 The main disadvantage indicators in this analysis are:
 
-* Whether a pupil had an open episode with children’s services in the last 6 years (CIN 6)
+* Whether a pupil had an open episode that has been assessed as 'in need' with children’s services for any length of time in the last 6 years (CIN 6)
 * Whether a pupil had been eligible for free school meals in the last 6 years (FSM 6)
 * Whether a pupil had any identified special educational need in the previous 6 years (SEN 6).
 
@@ -514,8 +526,8 @@ sizeDf<-data.frame(d=names(size),perc=size,stringsAsFactors = F)
 
 vD<-as.data.frame(ggplot_build(
   ggplot()+geom_circle(data=vP,aes(x0=x,y0=y,r=r,fill=g,group=g),alpha=0.3)+scale_fill_brewer(type="qual",palette=2,name="")+xlab("")+
-    ylab("")+coord_fixed()+
-    theme_minimal()+theme(axis.text=element_blank(),
+    ylab("")+coord_fixed()+ theme_minimal()+
+    theme(axis.text=element_blank(),panel.border = element_blank(),
                           axis.ticks=element_blank(),panel.grid = element_blank()))$data)
 
 #### work out centroids - this took fucking ages
@@ -669,8 +681,8 @@ detach("package:raster", unload=TRUE)
 
 ggplot()+geom_circle(data=vP,aes(x0=x,y0=y,r=r,fill=g),alpha=0.3)+ geom_text(data = centDf,aes(x=x,y=y,label=perc))+
   scale_fill_brewer(type="qual",palette=2,name="")+xlab(NULL)+
-  ylab(NULL)+coord_fixed()+
-  theme_minimal()+theme(axis.text=element_blank(),
+  ylab(NULL)+coord_fixed()+ theme_minimal()+
+  theme(axis.text=element_blank(),panel.border = element_blank(),
                         axis.ticks=element_blank(),panel.grid = element_blank(),plot.margin=unit(c(0,0,0,0),"mm")) + guides(fill=guide_legend(
                           keywidth=0.2,
                           keyheight=0.45,
@@ -796,7 +808,7 @@ sizeDf<-data.frame(d=names(size),perc=size,stringsAsFactors = F)
 vD<-as.data.frame(ggplot_build(
   ggplot()+geom_circle(data=vP,aes(x0=x,y0=y,r=r,fill=g,group=g),alpha=0.3)+scale_fill_brewer(type="qual",palette=2,name="")+xlab("")+
     ylab("")+coord_fixed()+
-    theme_minimal()+theme(axis.text=element_blank(),
+    theme(axis.text=element_blank(), panel.border=element_blank(),
                           axis.ticks=element_blank(),panel.grid = element_blank()))$data)
 
 #### work out centroids - this took fucking ages
@@ -959,8 +971,8 @@ detach("package:raster", unload=TRUE)
 ggplot()+geom_circle(data=vP %>%
                        mutate(g=row.names(vP)),aes(x0=x,y0=y,r=r,fill=g),alpha=0.3)+ geom_text(data = centDf,aes(x=x,y=y,label=perc))+
   scale_fill_brewer(type="qual",palette=2,name="")+xlab(NULL)+
-  ylab(NULL)+coord_fixed()+
-  theme_minimal()+theme(axis.text=element_blank(),
+  ylab(NULL)+coord_fixed()+theme_minimal()+
+  theme(axis.text=element_blank(), panel.border=element_blank(),
                         axis.ticks=element_blank(),panel.grid = element_blank(),plot.margin=unit(c(0,0,0,0),"mm")) + guides(fill=guide_legend(
                           keywidth=0.2,
                           keyheight=0.45,
@@ -1062,9 +1074,9 @@ cat("\n")
 if(doc=="docx"){   
 flextable::docx_value(tbF(tb_out))
 }else{
-  print(tbF(tb_out))
+ cat(tbF(tb_out))
 }
-cat("\n")
+cat("\n\n")
 
 }
 ```
@@ -1191,7 +1203,8 @@ for(i in unique(la_map$variable)){
    ggplot(aes(x=long,y=lat,group=group.x,fill=perc*100))+
          geom_polygon(colour="grey20")+
          scale_fill_gradient(low=pal[1],high=pal[9],name=paste0("% ",i))+
-         theme_minimal()+theme(panel.grid=element_blank(),
+     theme_minimal()+
+         theme(panel.grid=element_blank(), panel.border=element_blank(),
                                axis.ticks = element_blank(),
                                axis.text=element_blank(),
                                axis.title = element_blank())
@@ -1214,7 +1227,7 @@ cat("\n\n")
 
 
 
-tb_map<-unique(melt(tb[!is.na(la_home)][,.(pmr,la_home_code,sen6,fsm6,cin6,any3,sns6,ehc6,lac6,perFsm6,cpp6)],id.vars = c("pmr","la_home_code")
+tb_map<-unique(melt(tb[!is.na(la_home)][,.(pmr,la_home_code,sen6,fsm6,cin6,any3,sns6,ehc6,lac6,perFsm6,cpp6,all3)],id.vars = c("pmr","la_home_code")
      )[,.(c=.N),by=.(la_home_code,variable,value)
        ][,perc:=c/sum(c),by=.(la_home_code,variable)
          ][value==1]
@@ -1231,7 +1244,7 @@ names(tb_count)[2:length(names(tb_count))]<-paste0(names(tb_count)[2:length(name
 
 tb_map<-dcast(tb_map[,.(la_home_code,variable,perc)],la_home_code~variable,value.var="perc")
 
-for(i in c("sen6","fsm6","cin6","any3","sns6","ehc6","cpp6","lac6","perFsm6")){
+for(i in c("sen6","fsm6","cin6","any3","sns6","ehc6","cpp6","lac6","perFsm6","all3")){
   
   vnm<-paste0(i,"_scale")
   
@@ -1247,16 +1260,16 @@ leaf_poly@data<-merge(leaf_poly@data,tb_map,by.x="ctyua19cd",by.y="la_home_code"
 
 leaf_poly@data<-merge(leaf_poly@data,tb_count,by.x="ctyua19cd",by.y="la_home_code",all.x=T)
 
-labels<-lapply(c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6"),function(x){
+labels<-lapply(c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6","all3"),function(x){
   
   lb<-plyr::mapvalues(x,
                                  c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
                                  c("have any SEN in last 6 years","have any SEN without a statement/EHC plan in the last 6 years","have any statement/EHC plan in the last 6 years","Children looked after at have any point in the last 6 years","have any FSM in last 6 years","are persistently FSM eligible over 6 years","have any CIN in last 6 years","have any Child Protection Plan in the last 6 years",
-                                   "have any CIN/SEN/FSM in last 6 years","have any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+                                   "have any CIN/SEN/FSM in last 6 years","have any CIN/SEN/FSM in last 6 years exc. EHC plans","have CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
   
   substr(lb,1,1)<-tolower(substr(lb,1,1))
   
-  paste0("LA: ",leaf_poly@data$ctyua19nm,"</br>Measure: Children in LA's</br>KS4 cohort who</br>",lb,"</br>% of LA cohort: ",round(leaf_poly@data[,x],2)*100,"%,<br/>Count: ",leaf_poly@data[,paste0(x,"_count")])
+  paste0("LA: ",leaf_poly@data$ctyua19nm,"</br>Measure: Children in LA's</br>KS4 cohort who</br>",lb,"</br>% of LA cohort: ",round(leaf_poly@data[,x],2)*100,"%,<br/>Count: ",format(leaf_poly@data[,paste0(x,"_count")],big.mark=","))
   
   
 })
@@ -1267,7 +1280,7 @@ for(i in seq_len(length(labels))){
   
 }
 
-names(labels)<-c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6")
+names(labels)<-c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6","all3")
 
 cat("\n\n")
 
@@ -1315,9 +1328,12 @@ leaflet(data=leaf_poly, options = leafletOptions(background="#FFF"),
               opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(any3_scale),
               popupOptions = highlightOptions(bringToFront = T, weight=4),
               label =labels[["any3"]],group="Any CIN/SEN/FSM 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(all3_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["all3"]],group="CIN 6 & FSM 6 & SEN 6") %>%
   addLayersControl(
-    baseGroups = c("SEN 6","SEN support 6","EHC 6","FSM 6","Persistent FSM","CIN 6","CPP 6","LAC 6","Any CIN/SEN/FSM 6"),
-    options = layersControlOptions(collapsed = FALSE)) %>%
+    baseGroups = c("SEN 6","SEN support 6","EHC 6","FSM 6","Persistent FSM","CIN 6","CPP 6","LAC 6","Any CIN/SEN/FSM 6","CIN 6 & FSM 6 & SEN 6"),options = layersControlOptions(collapsed=F))  %>%
   addLegend("topleft", pal = pal2, values = seq(0,1),bins=5,
             labFormat = function(type, cuts, p) { 
               n = length(cuts) 
@@ -1337,13 +1353,13 @@ if(!doc=="docx"){
 
 tb_map<-as.data.frame(tb_map)
 
-minVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3"),function(x){
+minVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3","all3"),function(x){
      
      paste0(round(min(tb_map[,x],na.rm=T)*100,1),"%")
     
    }) 
 
-maxVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3"),function(x){
+maxVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3","all3"),function(x){
      
      paste0(round(max(tb_map[,x],na.rm=T)*100,1),"%")
     
@@ -1657,7 +1673,7 @@ tb[cin6==1
 
 ```
 
-A comparatively small proportion (7%) of the CIN 6 group have an open CIN episode with children’s services in all 6 years prior to their Key Stage 4 exams (`r tbCap("tb_cin_hist","Proportion of CIN 6 children in cohort by number of years with an open CIN episode. Note: years can be non-consecutive","cite")`). This is unsurprising given that often a child starting a child in need episode is intended as a short term intervention. The vast majority (80%) are in contact in 3 years or fewer. Nearly half of these children (44%) are on a CIN plan in only one year.
+A comparatively small proportion (7%) of the CIN 6 group have an open CIN episode with children’s services in all 6 years prior to their Key Stage 4 exams (`r tbCap("tb_cin_hist","Proportion of CIN 6 children in cohort by number of years with an open CIN episode. Note: years can be non-consecutive","cite")`). This is unsurprising given that often a child starting a child in need episode is intended as a short term intervention. The vast majority (80%) are in contact in 3 years or fewer^[Due to the fact that proportions drop off markedly after 3 years we take 4+ years as our cut-off for persistent CIN in our analysis below.]. Nearly half of these children (44%) are on a CIN plan in only one year.
 
 **`r tbCap("tb_cin_hist")`**
 
@@ -1738,7 +1754,7 @@ tbF(tb_out)
 
 ## Findings: Key Stage 4 outcomes for CIN/SEN/FSM 6 children
 
-`r tbCap("tb_av94","Proportions of each group achieving levels 9-4 in KS4 english and maths","cite")` demonstrates that children in the CIN 6, FSM 6 and SEN 6 groups are considerably less likely than the overall KS4 population to achieve levels 9-4 in KS4 English and Maths. 42% of those with any CIN/FSM or SEN in the last 6 years achieved this benchmark (43% excluding children with an EHC plan in the last 6), compared with a cohort average of 64%. Lowest rates are amongst children with any EHC plans over the last 6 years (12%) and children that were looked after over the last 6 years (23%).
+`r tbCap("tb_av94","Proportions of each group achieving levels 9-4 in KS4 english and maths","cite")` demonstrates that children in the CIN 6, FSM 6 and SEN 6 groups are considerably less likely than the overall KS4 population to achieve levels 9-4 in KS4 English and Maths. 42% of those with any CIN/FSM or SEN in the last 6 years achieved this benchmark (43% excluding children with an EHC plan in the last 6), compared with a cohort average of 64%. Lowest rates are amongst children with any EHC plans over the last 6 years (12%) and children that were looked after over the last 6 years (23%)^[For clarity, these groups are not mutually exclusive. For example children can have both had a child protection plan and been looked after in the past 6 years and so would appear in both the looked after children and child protection plan rows in these tables. Similarly it is possible for children to have both had an EHC plan and had identified SEN without an EHC plan in the past 6 years.].
 
 **`r tbCap("tb_av94")`**
 
@@ -1844,7 +1860,7 @@ mod_orig[,or:=exp(estimate)][,.(term,or)
 aes(x=term,y=0-(1-or)*100,group=group,fill=group))+geom_col(position=position_dodge(0.9))+
   geom_hline(yintercept=0,lty="dashed")+
   geom_text(aes(label=paste0(round(0-(1-or)*100),"%")),position=position_dodge(0.9),hjust=-0.3)+
-  coord_flip()+scale_y_continuous(limits=c(-100,100))+theme_bw()+scale_fill_brewer(type="qual",palette=3,name="")+
+  coord_flip()+scale_y_continuous(limits=c(-100,100))+scale_fill_brewer(type="qual",palette=3,name="")+ theme_bw()+
   ylab("\n% difference in odds of achieving level 9-4 KS4 English and maths\ncompared to reference level")+
   xlab("")
 
@@ -1884,9 +1900,9 @@ tb_recent[,group:=plyr::mapvalues(group,
                                  c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
                                  c("Any SEN in last 6 years","Any SEN without a\nstatement/EHC plan in the last 6 years","Any statement/EHC plan\nin the last 6 years","Children looked after at any point in the last 6 years","Any FSM in last 6 years","Children persistently FSM eligible over 6 years","Any CIN in last 6 years","Any Child Protection Plan in the last 6 years",
                                    "Any CIN/SEN/FSM in last 6 years","Any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))],
-aes(x=var,y=perc*100))+geom_col(fill="light blue",colour="grey20")+theme_bw()+
+aes(x=var,y=perc*100))+geom_col(fill="light blue",colour="grey20")+
    geom_hline(data=a_line,aes(colour=c,yintercept=y),lty="dashed")+
-   geom_text(aes(label=paste0(round(perc,2)*100,"%\n(",format(c,big.mark = ","),")")))+facet_wrap(~group,scales="free_x",nrow = 2)+
+   geom_text(aes(label=paste0(round(perc,2)*100,"%\n(",format(c,big.mark = ","),")")))+facet_wrap(~group,scales="free_x",nrow = 2)+ theme_bw()+
    xlab("")+ylab("% achieving 9-4 at KS4 English and Maths\n")+
    scale_y_continuous(limits=c(0,100))+scale_colour_manual(values=pal[5],name="")
 ```
@@ -1933,14 +1949,14 @@ ggplot(melt(persist_tb[,.(pmr,senCat,fsmCat,cinCat,l2_4)],id.vars=c("pmr","l2_4"
                ][!grepl("Not",value)],
      aes(x=value,y=perc*100))+geom_col(fill="light blue",colour="grey20")+
    geom_hline(data=av_line,aes(yintercept=perc,colour=variable2),lty="dashed",size=1.2)+
-   geom_text(aes(label=paste0(round(perc,2)*100,"%")),vjust=1)+facet_wrap(~variable,scales="free_x")+
-   theme_bw()+theme(axis.text.x=element_text(angle=90))+xlab("")+
-   ylab("% getting 9-4 at KS4 English and Maths\n")+
+   geom_text(aes(label=paste0(round(perc,2)*100,"%")),vjust=1)+facet_wrap(~variable,scales="free_x")+ theme_bw()+
+   theme(axis.text.x=element_text(angle=90))+xlab("")+
+   ylab("% getting 9-4 at KS4 English and Maths\n")+ theme_bw()+
    scale_colour_brewer(type="qual",palette=4,name="Average rates")+scale_y_continuous(limits=c(0,100))
 
 ```
 
-`r figCap("fig_94_comb_gen","Proportion of children with broad combinations of CIN/FSM/SEN 6 characteristics achieving levels 9-4 in KS4 English and Maths. Limited to combinations with at least 1000 children in the cohort","cite")` demonstrates that children with multiple vulnerabilities have notably lower KS4 outcomes than the relevant group averages. For example, 19% of children who are CIN 6 and had any time on SEN support in the previous 6 years achieved levels 9-4 in English and Maths at Key Stage 4, roughly half the rate of all CIN 6 children (34%). A sizeable group is the more than 50,000 children with both FSM and SEN Support in the last 6 years, of whom only 22% achieved levels 9-4 in English and Maths. 
+`r figCap("fig_94_comb_gen","Proportion of children with broad combinations of CIN/FSM/SEN 6 characteristics achieving levels 9-4 in KS4 English and Maths. Limited to combinations with at least 500 children in the cohort","cite")` demonstrates that children with multiple vulnerabilities have notably lower KS4 outcomes than the relevant group averages. For example, 19% of children who are CIN 6 and had any time on SEN support in the previous 6 years achieved levels 9-4 in English and Maths at Key Stage 4, roughly half the rate of all CIN 6 children (34%). A sizeable group is the more than 50,000 children with both FSM and SEN Support in the last 6 years, of whom only 22% achieved levels 9-4 in English and Maths. 
 
 *Note: the dot matrix below this chart indicates the broad combinations of characteristics for a specific group. For example a single dot in the FSM6 row indicates all children who are FSM6 regardless of their CIN 6 / SEN 6 status. A dot in both the CIN 6 and FSM 6 rows indicates the group who are both CIN 6 and FSM 6, regardless of their SEN 6 status*
 
@@ -2028,7 +2044,7 @@ one_way_out<-rbindlist(lapply(seq_len(length(vars_comb)),function(x){
 )
 
 comb_tb<-rbind(one_way_out,two_way_out,three_way_out,four_way_out
-               )[base>=1000
+               )[base>=500
                  ][,comb:=paste0("Any ",gsub("[-]","-Any ",toupper(comb)))]
 
 ## LAC
@@ -2114,8 +2130,8 @@ one_way_out<-rbindlist(lapply(seq_len(length(vars_comb)),function(x){
 )
 
 comb_tb_2<-rbind(one_way_out,two_way_out,three_way_out,four_way_out
-                 )[base>=1000
-                   ][,comb:=paste0("Any ",gsub("[-]","-Any ",toupper(gsub("p","per",comb))))]
+                 )[base>=500
+                   ][,comb:=paste0("Any ",gsub("[-]","-Any ",toupper(gsub("per","p",comb))))]
 
 comb_tb_out<-unique(rbind(comb_tb,comb_tb_2))
 
@@ -2137,7 +2153,7 @@ ggplot(comb_tb_out,aes(x=reorder(comb,r),y=val))+
 ```
 
 
-`r figCap("fig_94_comb","Proportion of children with varying combinations of CIN/FSM/SEN 6 characteristics achieving levels 9-4 in KS4 English and Maths. Limited to combinations with at least 1000 children in the cohort","cite")` repeats the analysis but with groups defined in a slightly different way: a single dot in FSM 6 row indicates children who are FSM 6 but with no other disadvantage indicators. A dot in both the CIN 6 and FSM 6 rows indicates a group who have been CIN 6 and FSM 6 but with no other disadvantage indicators. This graph shows that around 2 in 3 children who are CIN 6 but without any other identified SEN or FSM characteristics in the previous 6 years achieved levels 9-4 at KS4. This is similar to the cohort average of 64%. Among CIN 6 children that have also had SEN but no statement or EHC plan, the pass rate is 28%. 
+`r figCap("fig_94_comb","Proportion of children with varying combinations of CIN/FSM/SEN 6 characteristics achieving levels 9-4 in KS4 English and Maths. Limited to combinations with at least 500 children in the cohort","cite")` repeats the analysis but with groups defined in a slightly different way: a single dot in FSM 6 row indicates children who are FSM 6 but with no other disadvantage indicators. A dot in both the CIN 6 and FSM 6 rows indicates a group who have been CIN 6 and FSM 6 but with no other disadvantage indicators. This graph shows that around 2 in 3 children who are CIN 6 but without any other identified SEN or FSM characteristics in the previous 6 years achieved levels 9-4 at KS4. This is similar to the cohort average of 64%. Among CIN 6 children that have also had SEN but no statement or EHC plan, the pass rate is 28%. 
 
 `r figCap("fig_94_comb",display="cite")` demonstrates just under 1 in 5 children who have an EHC plan in the previous 6 years (but no other CIN/FSM/SEN 6 characteristics) achieved levels 9-4 in English and Maths, compared to 7% of those that have had an EHC plan in the last 6 years and had an open CIN episode during that time (but no other CIN/FSM/SEN 6 characteristics).
 
@@ -2149,7 +2165,7 @@ ggplot(comb_tb_out,aes(x=reorder(comb,r),y=val))+
 
 comb_tb<-tb[,.(c=.N),by=.(cin6,lac6,cpp6,fsm6,perFsm6,sns6,ehc6,l2_4)
 ][,`:=`(perc=round(c/sum(c),2)*100,base=sum(c)),by=.(cin6,lac6,cpp6,fsm6,perFsm6,sns6,ehc6)
-][l2_4==1][,l2_4:=NULL][order(-perc)][base>=1000]
+][l2_4==1][,l2_4:=NULL][order(-perc)][base>=500]
 
 require(dplyr)
 
@@ -2181,7 +2197,7 @@ comb_tb$comb<-gsub(toupper("cin6-lac6"),toupper("lac6"),comb_tb$comb)
 
 comb_tb<-comb_tb %>% mutate(base_scale=scales::rescale(base,c(0.1,1)))
 
-comb_tb$comb<-gsub("P","PER",comb_tb$comb)
+comb_tb$comb<-gsub("PER","P",comb_tb$comb)
 
 require(ggupset)
 require(ggplot2)
@@ -2193,7 +2209,7 @@ comb_tb<-comb_tb %>% select(comb,perc,base) %>% mutate(r=percent_rank(perc)) %>%
 
 ggplot(comb_tb,aes(x=reorder(comb,r),y=val))+
    geom_col(fill="light blue",colour="grey20")+
-     axis_combmatrix(sep = "-",levels=toupper(c("sns6","ehc6","cin6","cpp6","lac6","fsm6","perFsm6")))+
+     axis_combmatrix(sep = "-",levels=toupper(c("sns6","ehc6","cin6","cpp6","lac6","fsm6","pFsm6")))+
    geom_text(aes(label=ifelse(grepl("KS4",var),paste0(round(val,2),"%"),""),hjust=ifelse(val>40,0.8,-0.3)),angle=90)+
    xlab("")+ylab("")+ facet_wrap(~var,scales="free_y",nrow=2)+
    theme_bw()
@@ -2203,7 +2219,7 @@ ggplot(comb_tb,aes(x=reorder(comb,r),y=val))+
 
 ### Local authority variation in CIN/FSM/SEN 6 children achieving levels 9-4 in English and Maths
 
-`r tbCap("tb_la_94","Variation in CIN/FSM/SEN 6 children achieving levels 9-4 in KS4 English and Maths by local authority of school attended. Limited to LAs with at least 50 children in each group","cite")` demonstrates considerable variation amongst these CIN/FSM/SEN 6 groups based on the LA of a child’s KS4 school. For example, among children who were CIN 6 or FSM 6 or SEN 6, the proportion achieving grades 9-4 in English and Maths range from 28% to 64% across LAs. Variation is largest amongst children that are FSM eligible for all possible terms in the previous 6 years (persistently FSM), ranging from 17% achieving levels 9-4 in English and Maths to 70% in the highest performing LA.
+`r tbCap("tb_la_94","Variation in CIN/FSM/SEN 6 children achieving levels 9-4 in KS4 English and Maths by local authority of school attended. Limited to LAs with more than 20 children in each group","cite")` demonstrates considerable variation amongst these CIN/FSM/SEN 6 groups based on the LA of a child’s KS4 school. For example, among children who were CIN 6 or FSM 6 or SEN 6, the proportion achieving grades 9-4 in English and Maths range from 28% to 64% across LAs. Variation is largest amongst children that are FSM eligible for all possible terms in the previous 6 years (persistently FSM), ranging from 17% achieving levels 9-4 in English and Maths to 70% in the highest performing LA.
 
 **`r tbCap("tb_la_94")`**
 
@@ -2224,7 +2240,7 @@ tb_out<-unique(melt(tb[!is.na(la)][,`:=`(perCin6=ifelse(tot_cin>=4,1,0),perSen6=
 tbF(tb_out)
 ```
 
-```{r map2, results='asis'}
+```{r, results='asis'}
 
 if(doc=="docx"){
 
@@ -2263,8 +2279,9 @@ for(i in unique(la_map$variable[!is.na(la_map$variable)])){
    map<-la_map %>% filter(variable==i) %>%
    ggplot(aes(x=long,y=lat,group=group.x,fill=perc*100))+
          geom_polygon(colour="grey20")+
-         scale_fill_gradient(low=pal[1],high=pal[9],name=paste0("% ",i,"\nachieving 9-4 in\nKS4 English and Maths"))+
-         theme_minimal()+theme(panel.grid=element_blank(),
+         scale_fill_gradient(low=pal[1],high=pal[9],name=paste0("% ",i,"\nachieving 9-4 in\nKS4 English and Maths"))+ theme_minimal()+
+         theme(panel.grid=element_blank(),
+               panel.border = element_blank(),
                                axis.ticks = element_blank(),
                                axis.text=element_blank(),
                                axis.title = element_blank())
@@ -2286,7 +2303,7 @@ cat("\n\n")
 
 
 
-tb_map<-unique(melt(tb[!is.na(la9)][,.(pmr,la9,sen6,sns6,ehc6,fsm6,perFsm6,cin6,cpp6,lac6,any3,l2_4)],id.vars = c("pmr","la9","l2_4")
+tb_map<-unique(melt(tb[!is.na(la9)][,.(pmr,la9,sen6,sns6,ehc6,fsm6,perFsm6,cin6,cpp6,lac6,any3,l2_4,all3)],id.vars = c("pmr","la9","l2_4")
      )[,.(c=.N),by=.(la9,variable,value,l2_4)
        ][,`:=`(perc=c/sum(c),base=sum(c)),by=.(la9,variable,value)
          ][value==1 & l2_4==1][base>20]
@@ -2302,7 +2319,7 @@ names(tb_count)[2:length(names(tb_count))]<-paste0(names(tb_count)[2:length(name
 
 tb_map<-dcast(tb_map[,.(la9,variable,perc)],la9~variable,value.var="perc")
 
-for(i in c("sen6","fsm6","cin6","any3","sns6","ehc6","cpp6","lac6","perFsm6")){
+for(i in c("sen6","fsm6","cin6","any3","sns6","ehc6","cpp6","lac6","perFsm6","all3")){
   
   vnm<-paste0(i,"_scale")
   
@@ -2318,14 +2335,14 @@ leaf_poly@data<-merge(leaf_poly@data,tb_map,by.x="ctyua19cd",by.y="la9",all.x=T)
 
 leaf_poly@data<-merge(leaf_poly@data,tb_count,by.x="ctyua19cd",by.y="la9",all.x=T)
 
-labels<-lapply(c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6"),function(x){
+labels<-lapply(c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6","all3"),function(x){
   
   lb<-plyr::mapvalues(x,
                                  c("sen6","sns6","ehc6","lac6","fsm6","perFsm6","cin6","cpp6","any3","any3_sns","all3","all3_sns"),
                                  c("have any SEN in last 6 years","have any SEN without a statement/EHC plan in the last 6 years","have any statement/EHC plan in the last 6 years","Children looked after at have any point in the last 6 years","have any FSM in last 6 years","are persistently FSM eligible over 6 years","have any CIN in last 6 years","have any Child Protection Plan in the last 6 years",
-                                   "have any CIN/SEN/FSM in last 6 years","have any CIN/SEN/FSM in last 6 years exc. EHC plans","CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
+                                   "have any CIN/SEN/FSM in last 6 years","have any CIN/SEN/FSM in last 6 years exc. EHC plans","have CIN 6 & FSM 6 & SEN 6 in last 6 years","CIN 6 & FSM 6 & SEN 6 in last 6 years exc. EHC plans"))
   
-  paste0("LA: ",leaf_poly@data$ctyua19nm,"</br>Measure: Children in LA's</br>KS4 cohort who</br>",lb,"</br>achieving levels 9-4 KS4 English and Maths</br>% of LA cohort: ",round(leaf_poly@data[,x],2)*100,"%,<br/>Count: ",leaf_poly@data[,paste0(x,"_count")])
+  paste0("LA: ",leaf_poly@data$ctyua19nm,"</br>Measure: Children in LA's</br>KS4 cohort who</br>",lb,"</br>achieving levels 9-4 KS4 English and Maths</br>% achieving level 9-4 in English and maths: ",round(leaf_poly@data[,x],2)*100,"%,<br/>Count: ",format(leaf_poly@data[,paste0(x,"_count")],big.mark=","))
   
   
   
@@ -2338,7 +2355,7 @@ for(i in seq_len(length(labels))){
   
 }
 
-names(labels)<-c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6")
+names(labels)<-c("sen6","fsm6","cin6","any3","sns6","ehc6","lac6","perFsm6","cpp6","all3")
 
 cat("\n\n")
 
@@ -2386,8 +2403,12 @@ leaflet(data=leaf_poly, options = leafletOptions(background="#FFF"),
               opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(any3_scale),
               popupOptions = highlightOptions(bringToFront = T, weight=4),
               label =labels[["any3"]],group="Any CIN/SEN/FSM 6")  %>%
+  addPolygons(color="#444444", weight=1, smoothFactor = 0.5,
+              opacity=1.0, fillOpacity = 0.7, fillColor = ~pal2(all3_scale),
+              popupOptions = highlightOptions(bringToFront = T, weight=4),
+              label =labels[["all3"]],group="CIN 6 & FSM 6 & SEN 6") %>%
   addLayersControl(
-    baseGroups = c("SEN 6","SEN support 6","EHC 6","FSM 6","Persistent FSM","CIN 6","CPP 6","LAC 6","Any CIN/SEN/FSM 6"),options = layersControlOptions(collapsed=F)) %>%
+    baseGroups = c("SEN 6","SEN support 6","EHC 6","FSM 6","Persistent FSM","CIN 6","CPP 6","LAC 6","Any CIN/SEN/FSM 6","CIN 6 & FSM 6 & SEN 6"),options = layersControlOptions(collapsed=F)) %>%
   addLegend("topleft", pal = pal2, values = seq(0,1),bins=5,
             labFormat = function(type, cuts, p) { 
               n = length(cuts) 
@@ -2409,13 +2430,13 @@ if(!doc=="docx"){
 
 tb_map<-as.data.frame(tb_map)
 
-minVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3"),function(x){
+minVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3","all3"),function(x){
      
      paste0(round(min(tb_map[,x],na.rm=T)*100,1),"%")
     
    }) 
 
-maxVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3"),function(x){
+maxVals<-sapply(c("sen6","sns6","ehc6","fsm6","perFsm6","cin6","cpp6","lac6","any3","all3"),function(x){
      
      paste0(round(max(tb_map[,x],na.rm=T)*100,1),"%")
     
@@ -2526,7 +2547,7 @@ la_clust<-merge(melt(tb[,.(pmr,la,sen6,fsm6,cin6,cpp6,lac6,perFsm6,sns6,ehc6,any
                                    "Any CIN/SEN/FSM in\nlast 6 years","Any CIN/SEN/FSM in\nlast 6 years\nexc. EHC plans","CIN 6 & FSM 6\n& SEN 6 in\nlast 6 years","CIN 6 & FSM 6\n& SEN 6 in last 6 years\nexc. EHC plans"))
                      ]
 
-ggplot(la_clust,aes(x=region,y=perc*100))+geom_boxplot()+facet_wrap(~variable)+coord_flip()+theme_bw()+xlab("Region\n")+ylab("\n% of group in LA achieving level 9-4 in\nKS4 English and Maths")
+ggplot(la_clust,aes(x=region,y=perc*100))+geom_boxplot()+facet_wrap(~variable)+coord_flip()+xlab("Region\n")+ylab("\n% of group in LA achieving level 9-4 in\nKS4 English and Maths")+theme_bw()
 
 ```
 
@@ -2543,7 +2564,7 @@ Overall this analysis echoes previous work suggesting that large numbers of chil
 
 * Rates of achieving at least level 4 in these subjects are lowest among those that have had an EHC plan in the last 6 years (12%), and among those that have been looked after at some point in the last 6 years (23%).
 
-* The specific combination of children’s CIN/FSM/SEN 6 status makes substantial differences to their performance at KS4: Nearly two thirds of children that are CIN 6 only – i.e. CIN 6 but not FSM 6 and not SEN 6 – achieve at least a level 4 in English and Maths. This is similar to the average rate for the cohort as a whole (64%). This compares to 34% of CIN 6 children as a whole.
+* The specific combination of children’s CIN/FSM/SEN 6 status makes substantial differences to their performance at KS4: Nearly two thirds of children that are CIN 6 only – i.e. CIN 6 but not FSM 6 and not SEN 6 – achieve at least a level 4 in English and Maths. This is similar to the average rate for the cohort as a whole (64%) and to children that are FSM only during the 6 years. This compares to 34% of CIN 6 children as a whole.
 
 * Children who have had these disadvantage characteristics identified for longer have worse outcomes at Key Stage 4. However, even those with vulnerabilities identified for smaller proportions of time in the last 6 years have notably lower rates than the cohort average.
 
@@ -2552,6 +2573,6 @@ Overall this analysis echoes previous work suggesting that large numbers of chil
    + Rates of CIN 6 children achieving this range from 20% to 54%. 
    + Rates for children with SEN support but no EHC plan in the last 6 years range from 17% to 56%. 
 
-Taken together these findings suggest that these broad groupings of CIN, SEN and FSM 6 belie considerable variation in terms of KS4 outcomes. This suggests effective interventions to address the broad levels of disadvantage faced by these groups may need careful targeting given these levels of variation. 
+Taken together these findings suggest that these broad groupings of CIN, SEN and FSM 6 belie considerable variation in terms of KS4 outcomes. This suggests effective interventions to address the broad levels of disadvantage faced by these groups may need careful targeting given these levels of variation. A key question for further work is to examine how interventions may be as effectively targeted as possible to ensure maximum benefit to children with high levels of need as well as to reduce future cost pressures on local areas.
 
-However, even within the combinations examined here, this analysis is limited in the different types of need faced by children it explores (particularly around primary SEN types and/or disability). Useful further avenues for research would be to further explore the drivers of these within group differences, by accounting for a greater variety of needs within these overarching groups. Another particularly useful angle would be to explore drivers of the variation locally for these children.
+However, even within the combinations examined here, this analysis is limited in the different types of need faced by children it explores (particularly around primary SEN types and/or disability). Useful further avenues for research would be to further explore the drivers of these within group differences, by accounting for a greater variety of needs within these overarching groups such as different SEN types, those with needs identified at a later age, those with experience in alternative provision amongst a few. A final particularly useful angle would be to explore drivers of the variation locally for these children.
